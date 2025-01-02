@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <link id="favicon" rel="icon" type="image/png" href="/static/favicon.png"/>
+    <meta name="go-import" content="css.gomuks.app git https://github.com/gomuks/css.gomuks.app.git">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{{ or .PageTitle "gomuks css" }}</title>
+</head>
+<body>
+    <header>
+        <a href="/">Home</a>
+        <a href="/theme/new">New theme</a>
+        {{ if .User }}
+            Logged in as <code>{{ .User }}</code>
+        {{ end }}
+    </header>
+    <main>
+        {{ if eq .Page "index.gohtml" }}
+            {{ template "index.gohtml" .Data }}
+        {{ else if eq .Page "theme.gohtml" }}
+            {{ template "theme.gohtml" .Data }}
+        {{ else if eq .Page "theme-edit.gohtml" }}
+            {{ template "theme-edit.gohtml" .Data }}
+        {{ else if eq .Page "theme-history.gohtml" }}
+            {{ template "theme-history.gohtml" .Data }}
+        {{ end }}
+    </main>
+</body>
+</html>

@@ -1,0 +1,5 @@
+#!/bin/bash
+go install || exit 2
+export TOKEN_SECRET=OKqE2zpPQfB7tGGdfKRWXdCFboALtmjnUKGj4GyXU8eKUUcQX3
+export DATABASE_URL=postgres:///gomukscss?host=/var/run/postgresql
+css.gomuks.app

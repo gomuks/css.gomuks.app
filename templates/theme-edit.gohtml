@@ -1,0 +1,54 @@
+<style>
+    label {
+        display: block;
+    }
+</style>
+<form enctype="multipart/form-data" action="/theme/commit" method="post">
+    <label>
+        Theme shortcode
+        <input
+                type="text" name="theme_id" placeholder="meowtheme" required
+                {{ if .Theme }}
+                    readonly value="{{ .Theme.ID }}"
+                {{ end }}
+        />
+    </label>
+    <label>
+        Commit version
+        {{ if .Theme }}
+            <input type="number" name="commit_id" readonly value="{{ add .Theme.LatestCommit.Version 1 }}" />
+        {{ else }}
+            <input type="number" name="commit_id" readonly value="1" />
+        {{ end }}
+    </label>
+    <label>
+        Description
+        <textarea name="description" rows="5" placeholder="A theme that goes meow">
+            {{- if .Theme }}{{ .Theme.Description }}{{ end -}}
+        </textarea>
+    </label>
+    <label>
+        Preview images
+        <input type="file" name="preview" accept="image/png,image/jpeg,image/webp" />
+        {{ if .Theme }}
+            {{ range $index, $img := .Theme.Previews }}
+                <img src="/image/{{ $img.ID }}" alt="Preview image #{{ add $index 1 }}" />
+            {{ end }}
+        {{ end }}
+    </label>
+    <label>
+        Content
+        <textarea name="content" rows="20" required placeholder=":root {
+  --background-color: green;
+}">
+            {{- if .Theme }}{{ .Theme.LatestCommit.Content }}{{ end -}}
+        </textarea>
+    </label>
+    <label>
+        Commit message
+        <textarea name="message" rows="2" required>
+            {{- if .Theme }}Changed things{{ else }}Initial commit{{ end -}}
+        </textarea>
+    </label>
+    <button type="submit">Commit</button>
+</form>

@@ -1,0 +1,5 @@
+Theme {{ .Theme.ID }} by {{ .Theme.Admins }}
+
+{{ range $commit := .Commits }}
+    <a href="/theme/{{ $.Theme.ID }}/commit/{{ $commit.Version }}">v{{ $commit.Version }}</a>
+{{ end }}
