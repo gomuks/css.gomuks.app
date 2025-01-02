@@ -20,6 +20,7 @@ import (
 	"embed"
 	"html/template"
 	"io/fs"
+	"strings"
 
 	"go.mau.fi/util/exerrors"
 	"maunium.net/go/mautrix/id"
@@ -33,6 +34,12 @@ var StaticFS embed.FS
 
 var templateFuncs = map[string]any{
 	"add": func(a, b int) int { return a + b },
+	"firstline": func(s string) string {
+		if i := strings.IndexByte(s, '\n'); i != -1 {
+			return s[:i]
+		}
+		return s
+	},
 }
 
 var Templates = exerrors.Must(template.New("templates").
