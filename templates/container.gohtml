@@ -13,6 +13,8 @@
         {{ if .User }}
             <a href="/theme/new">New theme</a>
             Logged in as <code>{{ .User }}</code>
+        {{ else }}
+            To log in, use the button in gomuks web settings.
         {{ end }}
     </header>
     <main>
