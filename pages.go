@@ -25,7 +25,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/hlog"
 	"go.mau.fi/util/exerrors"
 	_ "golang.org/x/image/webp"
 	"maunium.net/go/mautrix/id"
@@ -62,7 +62,7 @@ func sendResponse(w http.ResponseWriter, r *http.Request, template string, data 
 func getIndexPage(w http.ResponseWriter, r *http.Request) {
 	themes, err := db.Theme.GetAll(r.Context())
 	if err != nil {
-		log.Err(err).Msg("Failed to get themes")
+		hlog.FromRequest(r).Err(err).Msg("Failed to get themes")
 		w.WriteHeader(http.StatusInternalServerError)
 		// TODO write body
 		return
@@ -74,7 +74,7 @@ func getUserPage(w http.ResponseWriter, r *http.Request) {
 	userID := id.UserID(r.PathValue("userID"))
 	themes, err := db.Theme.GetByAdmin(r.Context(), userID)
 	if err != nil {
-		log.Err(err).Msg("Failed to get themes")
+		hlog.FromRequest(r).Err(err).Msg("Failed to get themes")
 		w.WriteHeader(http.StatusInternalServerError)
 		// TODO write body
 		return
@@ -98,7 +98,7 @@ func getThemePage(w http.ResponseWriter, r *http.Request) {
 	themeID := database.ThemeID(getValueWithSuffix(r, "themeID"))
 	theme, err := db.Theme.Get(r.Context(), themeID)
 	if err != nil {
-		log.Err(err).Msg("Failed to get theme")
+		hlog.FromRequest(r).Err(err).Msg("Failed to get theme")
 		w.WriteHeader(http.StatusInternalServerError)
 		// TODO write body
 		return
@@ -117,7 +117,7 @@ func getThemePage(w http.ResponseWriter, r *http.Request) {
 		}
 		commit, err = db.Commit.Get(r.Context(), themeID, version)
 		if err != nil {
-			log.Err(err).Msg("Failed to get commit")
+			hlog.FromRequest(r).Err(err).Msg("Failed to get commit")
 			w.WriteHeader(http.StatusInternalServerError)
 			// TODO write body
 			return
@@ -134,7 +134,7 @@ func getThemeHistoryPage(w http.ResponseWriter, r *http.Request) {
 	themeID := database.ThemeID(r.PathValue("themeID"))
 	theme, err := db.Theme.Get(r.Context(), themeID)
 	if err != nil {
-		log.Err(err).Msg("Failed to get theme")
+		hlog.FromRequest(r).Err(err).Msg("Failed to get theme")
 		w.WriteHeader(http.StatusInternalServerError)
 		// TODO write body
 		return
@@ -145,7 +145,7 @@ func getThemeHistoryPage(w http.ResponseWriter, r *http.Request) {
 	}
 	commits, err := db.Commit.GetAll(r.Context(), themeID)
 	if err != nil {
-		log.Err(err).Msg("Failed to get commits")
+		hlog.FromRequest(r).Err(err).Msg("Failed to get commits")
 		w.WriteHeader(http.StatusInternalServerError)
 		// TODO write body
 		return
@@ -166,7 +166,7 @@ func getThemeEditPage(w http.ResponseWriter, r *http.Request) {
 		var err error
 		theme, err = db.Theme.Get(r.Context(), themeID)
 		if err != nil {
-			log.Err(err).Msg("Failed to get theme")
+			hlog.FromRequest(r).Err(err).Msg("Failed to get theme")
 			w.WriteHeader(http.StatusInternalServerError)
 			// TODO write body
 			return
