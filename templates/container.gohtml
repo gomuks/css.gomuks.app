@@ -10,8 +10,8 @@
 <body>
     <header>
         <a href="/">Home</a>
-        <a href="/theme/new">New theme</a>
         {{ if .User }}
+            <a href="/theme/new">New theme</a>
             Logged in as <code>{{ .User }}</code>
         {{ end }}
     </header>
