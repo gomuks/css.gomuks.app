@@ -24,6 +24,10 @@
     <a href="/theme/{{ .Theme.ID }}/commits">Version history</a>
     <a href="/theme/{{ .Theme.ID }}/edit">Edit theme</a>
 </div>
+<div>
+    To use the theme, paste this into your custom CSS:
+    <pre><code class="language-css">@import url("https://css.gomuks.app/theme/{{ .Theme.ID }}.css");</code></pre>
+</div>
 
 {{ range $index, $img := .Theme.Previews }}
     <img src="/image/{{ $img }}" alt="Preview image #{{ add $index 1 }}" />
