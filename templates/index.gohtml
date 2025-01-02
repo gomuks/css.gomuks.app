@@ -1,5 +1,5 @@
 <ul>
     {{ range .Themes }}
-        <li><a href="/theme/{{ .ID }}">{{ .ID }}</a></li>
+        <li><a href="/theme/{{ .ID }}">{{ or .Name .ID }} by {{ .Admins }}</a></li>
     {{ end }}
 </ul>
