@@ -42,15 +42,17 @@ type ThemePageData struct {
 
 func sendResponse(w http.ResponseWriter, r *http.Request, template string, data *ThemePageData) {
 	if r.Header.Get("Accept") == "application/json" {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		exerrors.PanicIfNotNil(json.NewEncoder(w).Encode(data))
 	} else if r.Header.Get("Accept") == "text/css" && data.Theme != nil {
-		w.Header().Set("Content-Type", "text/css")
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 		if data.Commit != nil {
 			_, _ = w.Write([]byte(data.Commit.Content))
 		} else {
 			_, _ = w.Write([]byte(data.Theme.LatestCommit.Content))
 		}
 	} else {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		exerrors.PanicIfNotNil(Templates.ExecuteTemplate(w, "container.gohtml", &ContainerData{
 			User: verifyCookie(r),
 			Page: template,
