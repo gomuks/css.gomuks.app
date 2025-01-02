@@ -76,6 +76,9 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 		// TODO write body
 		return
 	}
+	if themeName == "" {
+		themeName = string(themeID)
+	}
 	themeDescription := r.Form.Get("description")
 	if len(themeDescription) > descriptionMaxLength {
 		w.WriteHeader(http.StatusBadRequest)

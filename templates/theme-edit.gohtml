@@ -22,6 +22,10 @@
         {{ end }}
     </label>
     <label>
+        Theme name
+        <input type="text" name="name" placeholder="Meow Theme" value="{{ if .Theme }}{{ .Theme.Name }}{{ end }}" />
+    </label>
+    <label>
         Description
         <textarea name="description" rows="5" placeholder="A theme that goes meow">
             {{- if .Theme }}{{ .Theme.Description }}{{ end -}}
