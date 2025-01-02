@@ -5,7 +5,7 @@
     <link id="favicon" rel="icon" type="image/png" href="/static/favicon.png"/>
     <meta name="go-import" content="css.gomuks.app git https://github.com/gomuks/css.gomuks.app.git">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>{{ or .PageTitle "gomuks css" }}</title>
+    <title>gomuks css{{ if .PageTitle }} - {{ .PageTitle }}{{ end }}</title>
 </head>
 <body>
     <header>

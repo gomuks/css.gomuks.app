@@ -40,7 +40,7 @@ type ThemePageData struct {
 	Commits []*database.Commit `json:"commits,omitempty"`
 }
 
-func sendResponse(w http.ResponseWriter, r *http.Request, template string, data *ThemePageData) {
+func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template string, data *ThemePageData) {
 	if r.Header.Get("Accept") == "application/json" {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		exerrors.PanicIfNotNil(json.NewEncoder(w).Encode(data))
@@ -54,9 +54,10 @@ func sendResponse(w http.ResponseWriter, r *http.Request, template string, data 
 	} else {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		exerrors.PanicIfNotNil(Templates.ExecuteTemplate(w, "container.gohtml", &ContainerData{
-			User: verifyCookie(r),
-			Page: template,
-			Data: data,
+			User:      verifyCookie(r),
+			PageTitle: pageTitle,
+			Page:      template,
+			Data:      data,
 		}))
 	}
 }
@@ -69,7 +70,7 @@ func getIndexPage(w http.ResponseWriter, r *http.Request) {
 		// TODO write body
 		return
 	}
-	sendResponse(w, r, "index.gohtml", &ThemePageData{Themes: themes})
+	sendResponse(w, r, "", "index.gohtml", &ThemePageData{Themes: themes})
 }
 
 func getUserPage(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +82,7 @@ func getUserPage(w http.ResponseWriter, r *http.Request) {
 		// TODO write body
 		return
 	}
-	sendResponse(w, r, "index.gohtml", &ThemePageData{Themes: themes})
+	sendResponse(w, r, string(userID), "index.gohtml", &ThemePageData{Themes: themes})
 }
 
 func getValueWithSuffix(r *http.Request, key string) string {
@@ -110,6 +111,7 @@ func getThemePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var commit *database.Commit
+	title := theme.Name
 	if versionStr := getValueWithSuffix(r, "version"); versionStr != "" {
 		version, err := strconv.Atoi(versionStr)
 		if err != nil {
@@ -128,8 +130,9 @@ func getThemePage(w http.ResponseWriter, r *http.Request) {
 			// TODO write body
 			return
 		}
+		title += " - v" + versionStr
 	}
-	sendResponse(w, r, "theme.gohtml", &ThemePageData{Theme: theme, Commit: commit})
+	sendResponse(w, r, title, "theme.gohtml", &ThemePageData{Theme: theme, Commit: commit})
 }
 
 func getThemeHistoryPage(w http.ResponseWriter, r *http.Request) {
@@ -152,7 +155,7 @@ func getThemeHistoryPage(w http.ResponseWriter, r *http.Request) {
 		// TODO write body
 		return
 	}
-	sendResponse(w, r, "theme-history.gohtml", &ThemePageData{Theme: theme, Commits: commits})
+	sendResponse(w, r, theme.Name+" - history", "theme-history.gohtml", &ThemePageData{Theme: theme, Commits: commits})
 }
 
 func getThemeEditPage(w http.ResponseWriter, r *http.Request) {
@@ -164,6 +167,7 @@ func getThemeEditPage(w http.ResponseWriter, r *http.Request) {
 	}
 	themeID := database.ThemeID(r.PathValue("themeID"))
 	var theme *database.Theme
+	pageTitle := "new theme"
 	if themeID != "" {
 		var err error
 		theme, err = db.Theme.Get(r.Context(), themeID)
@@ -181,6 +185,7 @@ func getThemeEditPage(w http.ResponseWriter, r *http.Request) {
 			// TODO write body
 			return
 		}
+		pageTitle = "edit " + theme.Name
 	}
-	sendResponse(w, r, "theme-edit.gohtml", &ThemePageData{Theme: theme})
+	sendResponse(w, r, pageTitle, "theme-edit.gohtml", &ThemePageData{Theme: theme})
 }
