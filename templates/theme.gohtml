@@ -12,12 +12,11 @@
 <p>
     Last updated at {{ $commit.CreatedAt }}
 </p>
-<p>
-    {{ $commit.Message }}
-</p>
-<pre><code class="language-css">
-    {{- $commit.Content -}}
-</code></pre>
+{{ if .Commit }}
+    <p>
+        {{ .Commit.Message }}
+    </p>
+{{ end }}
 <div>
     <a href="/theme/{{ .Theme.ID }}.css">Raw CSS</a>
     (or <a href="/theme/{{ .Theme.ID }}/commit/{{ $commit.Version }}.css">without autoupdate</a>)
@@ -32,3 +31,7 @@
 {{ range $index, $img := .Theme.Previews }}
     <img src="/image/{{ $img }}" alt="Preview image #{{ add $index 1 }}" />
 {{ end }}
+
+<pre><code class="language-css">
+    {{- $commit.Content -}}
+</code></pre>
