@@ -32,7 +32,7 @@
         <input type="file" name="preview" accept="image/png,image/jpeg,image/webp" />
         {{ if .Theme }}
             {{ range $index, $img := .Theme.Previews }}
-                <img src="/image/{{ $img.ID }}" alt="Preview image #{{ add $index 1 }}" />
+                <img style="max-height: 200px;" src="/image/{{ $img }}" alt="Preview image #{{ add $index 1 }}" />
             {{ end }}
         {{ end }}
     </label>
