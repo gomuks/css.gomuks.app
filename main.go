@@ -52,8 +52,18 @@ var db *database.Database
 func main() {
 	defLog = exerrors.Must((&zeroconfig.Config{
 		Writers: []zeroconfig.WriterConfig{{
-			Type:   zeroconfig.WriterTypeStdout,
-			Format: zeroconfig.LogFormatPrettyColored,
+			Type:     zeroconfig.WriterTypeStdout,
+			Format:   zeroconfig.LogFormatPrettyColored,
+			MinLevel: ptr.Ptr(zerolog.InfoLevel),
+		}, {
+			Type:   zeroconfig.WriterTypeFile,
+			Format: zeroconfig.LogFormatJSON,
+			FileConfig: zeroconfig.FileConfig{
+				Filename:   "/var/log/gomuks-css.log",
+				MaxSize:    100 * 1024,
+				MaxAge:     7,
+				MaxBackups: 10,
+			},
 		}},
 		MinLevel: ptr.Ptr(zerolog.TraceLevel),
 	}).Compile())
