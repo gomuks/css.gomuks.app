@@ -148,8 +148,12 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 			return err
 		} else if theme == nil && commitVersion != 1 {
 			return fmt.Errorf("theme not found")
-		} else if theme != nil && commitVersion != theme.LatestCommit.Version+1 {
-			return fmt.Errorf("invalid commit version")
+		} else if theme != nil {
+			if commitVersion != theme.LatestCommit.Version+1 {
+				return fmt.Errorf("invalid commit version")
+			} else if !slices.Contains(theme.Admins, userID) {
+				return fmt.Errorf("not an admin")
+			}
 		}
 		if theme == nil || theme.Name != themeName || theme.Description != themeDescription {
 			if theme == nil {
