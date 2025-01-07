@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
@@ -81,7 +82,9 @@ const cookieName = "gomuks-css-auth"
 func handleRemoteLogin(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	log := hlog.FromRequest(r)
-	resp, err := fc.GetOpenIDUserInfo(r.Context(), q.Get("server_name"), q.Get("token"))
+	timeoutCtx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	resp, err := fc.GetOpenIDUserInfo(timeoutCtx, q.Get("server_name"), q.Get("token"))
+	cancel()
 	if err != nil {
 		log.Err(err).Msg("Failed to get OpenID user info")
 		w.WriteHeader(http.StatusUnauthorized)
