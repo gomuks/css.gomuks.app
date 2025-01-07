@@ -8,10 +8,10 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
 	github.com/rs/zerolog v1.33.0
-	go.mau.fi/util v0.8.3
+	go.mau.fi/util v0.8.4-0.20250106152331-30b8c95e7d7a
 	go.mau.fi/zeroconfig v0.1.3
 	golang.org/x/image v0.23.0
-	maunium.net/go/mautrix v0.22.1
+	maunium.net/go/mautrix v0.22.2-0.20250107114437-ceb9c7b866e1
 )
 
 require (
@@ -26,8 +26,8 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/exp v0.0.0-20241215155358-4a5509556b9e // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/exp v0.0.0-20250103183323-7d7fa50e5329 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
