@@ -44,7 +44,7 @@ const (
 		VALUES ($1, $2, $3, $4)
 	`
 	updateThemeQuery = `
-		UPDATE theme SET name = $2, description = $3 WHERE id = $1
+		UPDATE theme SET name = $2, description = $3, last_commit = $4 WHERE id = $1
 	`
 	setLatestThemeCommitQuery = `UPDATE theme SET last_commit = $2 WHERE id = $1`
 	deleteThemeQuery          = `
