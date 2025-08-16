@@ -46,6 +46,7 @@ func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template st
 		exerrors.PanicIfNotNil(json.NewEncoder(w).Encode(data))
 	} else if r.Header.Get("Accept") == "text/css" && data.Theme != nil {
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		w.Header().Set("Cross-Origin-Resource-Policy", "cross-origin")
 		if data.Commit != nil {
 			_, _ = w.Write([]byte(data.Commit.Content))
 		} else {
