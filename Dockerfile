@@ -1,4 +1,6 @@
-FROM golang:1-alpine AS builder
+ARG DOCKER_HUB="docker.io"
+
+FROM ${DOCKER_HUB}/golang:1-alpine AS builder
 
 RUN apk add --no-cache ca-certificates
 WORKDIR /build/css.gomuks.app
