@@ -1,5 +1,5 @@
 // css.gomuks.app - A user CSS repository for gomuks web.
-// Copyright (C) 2024 Tulir Asokan
+// Copyright (C) 2026 Tulir Asokan
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -88,7 +88,9 @@ func main() {
 		Handler: exhttp.ApplyMiddleware(
 			mux,
 			hlog.NewHandler(*defLog),
-			requestlog.AccessLogger(true),
+			requestlog.AccessLogger(requestlog.Options{
+				TrustXForwardedFor: true,
+			}),
 		),
 	}
 

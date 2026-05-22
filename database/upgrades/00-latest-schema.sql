@@ -1,18 +1,19 @@
--- v0 -> v1 (compatible with v1+): Latest schema
+-- v0 -> v2 (compatible with v2+): Latest schema
 CREATE TABLE theme (
     id          TEXT PRIMARY KEY,
     name        TEXT NOT NULL,
-    description TEXT NOT NULL,
     last_commit INTEGER
 );
 
 CREATE TABLE commit (
-    theme_id   TEXT,
-    version    INTEGER,
-    message    TEXT      NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by TEXT      NOT NULL,
-    content    TEXT      NOT NULL,
+    theme_id       TEXT,
+    version        INTEGER,
+    message        TEXT      NOT NULL,
+    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by     TEXT      NOT NULL,
+    content        TEXT      NOT NULL,
+    description    TEXT      NOT NULL,
+    preview_images uuid[]    NOT NULL,
 
     PRIMARY KEY (theme_id, version),
     CONSTRAINT commit_theme_id_fkey FOREIGN KEY (theme_id) REFERENCES theme (id)

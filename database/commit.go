@@ -1,5 +1,5 @@
 // css.gomuks.app - A user CSS repository for gomuks web.
-// Copyright (C) 2024 Tulir Asokan
+// Copyright (C) 2026 Tulir Asokan
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -20,20 +20,23 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"go.mau.fi/util/dbutil"
 	"maunium.net/go/mautrix/id"
 )
 
 const (
-	getAllCommitsQuery = `
-		SELECT theme_id, version, message, created_at, created_by, content
+	getCommitBaseQuery = `
+		SELECT theme_id, version, message, created_at, created_by, content, description, preview_images
 		FROM commit
 		WHERE theme_id = $1
 	`
-	getCommitQuery = getAllCommitsQuery + `AND version = $2`
-	addCommitQuery = `
-		INSERT INTO commit (theme_id, version, message, created_at, created_by, content)
-		VALUES ($1, $2, $3, $4, $5, $6)
+	getAllCommitsQuery = getCommitBaseQuery + `ORDER BY version ASC`
+	getCommitQuery     = getCommitBaseQuery + `AND version = $2`
+	addCommitQuery     = `
+		INSERT INTO commit (theme_id, version, message, created_at, created_by, content, description, preview_images)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 )
 
@@ -54,18 +57,20 @@ func (cq *CommitQuery) Add(ctx context.Context, commit *Commit) error {
 }
 
 type Commit struct {
-	ThemeID   ThemeID   `json:"theme_id"`
-	Version   int       `json:"version"`
-	Message   string    `json:"message"`
-	CreatedAt time.Time `json:"created_at"`
-	CreatedBy id.UserID `json:"created_by"`
-	Content   string    `json:"content"`
+	ThemeID     ThemeID     `json:"theme_id"`
+	Version     int         `json:"version"`
+	Message     string      `json:"message"`
+	CreatedAt   time.Time   `json:"created_at"`
+	CreatedBy   id.UserID   `json:"created_by"`
+	Content     string      `json:"content"`
+	Description string      `json:"description"`
+	Previews    []uuid.UUID `json:"previews"`
 }
 
 func (c *Commit) Scan(row dbutil.Scannable) (*Commit, error) {
-	return dbutil.ValueOrErr(c, row.Scan(&c.ThemeID, &c.Version, &c.Message, &c.CreatedAt, &c.CreatedBy, &c.Content))
+	return dbutil.ValueOrErr(c, row.Scan(&c.ThemeID, &c.Version, &c.Message, &c.CreatedAt, &c.CreatedBy, &c.Content, &c.Description, pq.Array(&c.Previews)))
 }
 
 func (c *Commit) sqlVariables() []any {
-	return []any{c.ThemeID, c.Version, c.Message, c.CreatedAt, c.CreatedBy, c.Content}
+	return []any{c.ThemeID, c.Version, c.Message, c.CreatedAt, c.CreatedBy, c.Content, c.Description, pq.Array(c.Previews)}
 }

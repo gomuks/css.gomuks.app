@@ -1,5 +1,5 @@
 // css.gomuks.app - A user CSS repository for gomuks web.
-// Copyright (C) 2024 Tulir Asokan
+// Copyright (C) 2026 Tulir Asokan
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -27,11 +27,12 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/hlog"
+	"go.mau.fi/util/exhttp"
 	"maunium.net/go/mautrix/federation"
 	"maunium.net/go/mautrix/id"
 )
 
-var fc = federation.NewClient("", nil)
+var fc = federation.NewClient("", nil, nil, exhttp.SensibleClientSettings)
 var tokenSecret = os.Getenv("TOKEN_SECRET")
 
 const CookieLifetime = 24 * time.Hour

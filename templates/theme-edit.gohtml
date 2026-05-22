@@ -28,15 +28,20 @@
     <label>
         Description
         <textarea name="description" rows="5" placeholder="A theme that goes meow">
-            {{- if .Theme }}{{ .Theme.Description }}{{ end -}}
+            {{- if .Theme }}{{ .Theme.LatestCommit.Description }}{{ end -}}
         </textarea>
     </label>
     <label>
         Preview images
         <input type="file" name="preview" accept="image/png,image/jpeg,image/webp" />
+        <br>
         {{ if .Theme }}
-            {{ range $index, $img := .Theme.Previews }}
+            {{ range $index, $img := .Theme.LatestCommit.Previews }}
                 <img style="max-height: 200px;" src="/image/{{ $img }}" alt="Preview image #{{ add $index 1 }}" />
+                <label>
+                    <input type="checkbox" name="delete_preview" value="{{ $img }}" />
+                    Delete image
+                </label>
             {{ end }}
         {{ end }}
     </label>

@@ -99,6 +99,16 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 	}
 	var newPreviews []*database.PreviewImage
 	var removedPreviews []uuid.UUID
+	for _, deletedPreview := range r.Form["delete_preview"] {
+		previewID, err := uuid.Parse(deletedPreview)
+		if err != nil {
+			log.Err(err).Msg("Failed to parse deleted preview ID")
+			w.WriteHeader(http.StatusBadRequest)
+			// TODO write body
+			return
+		}
+		removedPreviews = append(removedPreviews, previewID)
+	}
 	for _, preview := range r.MultipartForm.File["preview"] {
 		if preview.Size > maxPreviewSize {
 			w.WriteHeader(http.StatusBadRequest)
@@ -158,13 +168,12 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 				return fmt.Errorf("not an admin")
 			}
 		}
-		if theme == nil || theme.Name != themeName || theme.Description != themeDescription {
+		if theme == nil || theme.Name != themeName {
 			if theme == nil {
 				theme = &database.Theme{
-					ID:          themeID,
-					Name:        themeName,
-					Description: themeDescription,
-					Admins:      []id.UserID{userID},
+					ID:     themeID,
+					Name:   themeName,
+					Admins: []id.UserID{userID},
 				}
 				err = db.Theme.Create(ctx, theme)
 				if err != nil {
@@ -175,7 +184,6 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 					return fmt.Errorf("failed to add theme admin: %w", err)
 				}
 			} else {
-				theme.Description = themeDescription
 				theme.Name = themeName
 				err = db.Theme.Update(ctx, theme)
 				if err != nil {
@@ -183,16 +191,28 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		if len(newPreviews)+len(theme.Previews) > maxPreviewCount {
+		commit := &database.Commit{
+			ThemeID:     theme.ID,
+			Version:     commitVersion,
+			Message:     commitMessage,
+			Description: themeDescription,
+			CreatedAt:   time.Now(),
+			CreatedBy:   userID,
+			Content:     commitContent,
+		}
+		commit.Previews = slices.Clone(theme.LatestCommit.Previews)
+		commit.Previews = slices.DeleteFunc(commit.Previews, func(p uuid.UUID) bool {
+			return slices.Contains(removedPreviews, p)
+		})
+		if len(commit.Previews)+len(newPreviews) > maxPreviewCount {
 			return fmt.Errorf("too many previews")
 		}
-		commit := &database.Commit{
-			ThemeID:   theme.ID,
-			Version:   commitVersion,
-			Message:   commitMessage,
-			CreatedAt: time.Now(),
-			CreatedBy: userID,
-			Content:   commitContent,
+		for _, preview := range newPreviews {
+			err = db.PreviewImage.Add(ctx, preview)
+			if err != nil {
+				return fmt.Errorf("failed to add preview image: %w", err)
+			}
+			commit.Previews = append(commit.Previews, preview.ID)
 		}
 		err = db.Commit.Add(ctx, commit)
 		if err != nil {
@@ -202,22 +222,6 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 		err = db.Theme.SetLatestCommit(ctx, theme.ID, commit.Version)
 		if err != nil {
 			return fmt.Errorf("failed to update latest theme commit: %w", err)
-		}
-		for _, preview := range newPreviews {
-			err = db.PreviewImage.Add(ctx, preview)
-			if err != nil {
-				return fmt.Errorf("failed to add preview image: %w", err)
-			}
-			theme.Previews = append(theme.Previews, preview.ID)
-		}
-		for _, previewID := range removedPreviews {
-			err = db.PreviewImage.Delete(ctx, previewID)
-			if err != nil {
-				return fmt.Errorf("failed to delete preview image: %w", err)
-			}
-			theme.Previews = slices.DeleteFunc(theme.Previews, func(u uuid.UUID) bool {
-				return u == previewID
-			})
 		}
 		return nil
 	})
