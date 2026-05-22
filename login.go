@@ -28,6 +28,7 @@ import (
 
 	"github.com/rs/zerolog/hlog"
 	"go.mau.fi/util/exhttp"
+	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/federation"
 	"maunium.net/go/mautrix/id"
 )
@@ -70,12 +71,26 @@ func verifyToken(token string) id.UserID {
 	return id.UserID(data[8 : len(data)-32])
 }
 
-func verifyCookie(r *http.Request) id.UserID {
+func readCookie(r *http.Request) id.UserID {
 	cookie, err := r.Cookie(cookieName)
-	if cookie == nil || err != nil {
-		return ""
+	if cookie != nil && err == nil {
+		return verifyToken(cookie.Value)
 	}
-	return verifyToken(cookie.Value)
+	return ""
+}
+
+func verifyCookie(w http.ResponseWriter, r *http.Request) id.UserID {
+	cookie, err := r.Cookie(cookieName)
+	if err != nil {
+		sendErrorResponse(w, r, mautrix.MMissingToken.WithMessage("Failed to read auth cookie"))
+	} else if cookie == nil {
+		sendErrorResponse(w, r, mautrix.MMissingToken.WithMessage("You're not logged in"))
+	} else if userID := verifyToken(cookie.Value); userID == "" {
+		sendErrorResponse(w, r, mautrix.MUnknownToken.WithMessage("Invalid or expired auth cookie"))
+	} else {
+		return userID
+	}
+	return ""
 }
 
 const cookieName = "gomuks-css-auth"
@@ -88,8 +103,7 @@ func handleRemoteLogin(w http.ResponseWriter, r *http.Request) {
 	cancel()
 	if err != nil {
 		log.Err(err).Msg("Failed to get OpenID user info")
-		w.WriteHeader(http.StatusUnauthorized)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MUnknownToken.WithMessage("Failed to validate OpenID token"))
 		return
 	}
 	cookieExpiry := time.Now().Add(CookieLifetime)

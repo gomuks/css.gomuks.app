@@ -26,6 +26,8 @@
             {{ template "theme-edit.gohtml" .Data }}
         {{ else if eq .Page "theme-history.gohtml" }}
             {{ template "theme-history.gohtml" .Data }}
+        {{ else if eq .Page "error.gohtml" }}
+            {{ template "error.gohtml" .Data }}
         {{ end }}
     </main>
 </body>

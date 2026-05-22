@@ -19,6 +19,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"io"
@@ -30,6 +31,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/hlog"
+	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/id"
 
 	"css.gomuks.app/database"
@@ -43,37 +45,36 @@ const contentMaxLength = 128 * 1024
 const maxPreviewSize = 512 * 1024
 const maxPreviewCount = 8
 
+var (
+	ErrBadFormData = mautrix.RespError{StatusCode: http.StatusBadRequest, ErrCode: "APP.GOMUKS.CSS.BAD_FORM_DATA", Err: "Invalid multipart form data"}
+	ErrConflict    = mautrix.RespError{StatusCode: http.StatusConflict, ErrCode: "APP.GOMUKS.CSS.CONFLICT", Err: "Commit version conflict, did someone else update the theme?"}
+)
+
 func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 	log := hlog.FromRequest(r)
-	userID := verifyCookie(r)
+	userID := verifyCookie(w, r)
 	if userID == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		// TODO write body
 		return
 	}
 	err := r.ParseMultipartForm(5 * 1024 * 1024)
 	if err != nil {
 		log.Err(err).Msg("Failed to parse form")
-		// TODO write body
-		w.WriteHeader(http.StatusBadRequest)
+		sendErrorResponse(w, r, ErrBadFormData)
 		return
 	}
 	themeID := database.ThemeID(r.Form.Get("theme_id"))
 	if themeID == "new" || themeID == "commit" || !themeIDRegex.MatchString(string(themeID)) {
-		w.WriteHeader(http.StatusBadRequest)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MInvalidParam.WithMessage("Invalid theme ID %q", themeID))
 		return
 	}
 	commitVersion, err := strconv.Atoi(r.Form.Get("commit_id"))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MInvalidParam.WithMessage("Invalid commit ID"))
 		return
 	}
 	themeName := r.Form.Get("name")
 	if len(themeName) > nameMaxLength {
-		w.WriteHeader(http.StatusBadRequest)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MInvalidParam.WithMessage("Too long theme name (max %d)", nameMaxLength))
 		return
 	}
 	if themeName == "" {
@@ -81,64 +82,52 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 	}
 	themeDescription := r.Form.Get("description")
 	if len(themeDescription) > descriptionMaxLength {
-		w.WriteHeader(http.StatusBadRequest)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MInvalidParam.WithMessage("Too long description (max %d)", descriptionMaxLength))
 		return
 	}
 	commitContent := r.Form.Get("content")
 	if len(commitContent) > contentMaxLength {
-		w.WriteHeader(http.StatusBadRequest)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MInvalidParam.WithMessage("Too long content (max %d)", contentMaxLength))
 		return
 	}
 	commitMessage := r.Form.Get("message")
 	if len(commitMessage) > descriptionMaxLength {
-		w.WriteHeader(http.StatusBadRequest)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MInvalidParam.WithMessage("Too long commit message (max %d)", descriptionMaxLength))
 		return
 	}
 	var newPreviews []*database.PreviewImage
 	var removedPreviews []uuid.UUID
 	for _, deletedPreview := range r.Form["delete_preview"] {
 		previewID, err := uuid.Parse(deletedPreview)
-		if err != nil {
-			log.Err(err).Msg("Failed to parse deleted preview ID")
-			w.WriteHeader(http.StatusBadRequest)
-			// TODO write body
-			return
+		if err == nil {
+			removedPreviews = append(removedPreviews, previewID)
 		}
-		removedPreviews = append(removedPreviews, previewID)
 	}
 	for _, preview := range r.MultipartForm.File["preview"] {
 		if preview.Size > maxPreviewSize {
-			w.WriteHeader(http.StatusBadRequest)
-			// TODO write body
+			sendErrorResponse(w, r, mautrix.MInvalidParam.WithMessage("Too large preview image (max %d KiB)", maxPreviewSize/1024))
 			return
 		}
 		file, err := preview.Open()
 		if err != nil {
-			log.Err(err).Msg("Failed to open preview file")
-			// TODO write body
-			w.WriteHeader(http.StatusBadRequest)
+			log.Err(err).Msg("Failed to open file")
+			sendErrorResponse(w, r, ErrBadFormData.WithMessage("Failed to open preview image"))
 			return
 		}
 		data, err := io.ReadAll(file)
 		if err != nil {
 			log.Err(err).Msg("Failed to read file")
-			// TODO write body
-			w.WriteHeader(http.StatusBadRequest)
+			sendErrorResponse(w, r, ErrBadFormData.WithMessage("Failed to open preview image"))
 			return
 		}
 		cfg, format, err := image.DecodeConfig(bytes.NewReader(data))
 		if err != nil {
 			log.Err(err).Msg("Failed to decode image config")
-			// TODO write body
-			w.WriteHeader(http.StatusBadRequest)
+			sendErrorResponse(w, r, mautrix.MInvalidParam.WithMessage("Invalid preview image file"))
 			return
 		} else if format != "png" && format != "jpeg" && format != "webp" {
 			log.Err(err).Msg("Invalid image format")
-			// TODO write body
-			w.WriteHeader(http.StatusBadRequest)
+			sendErrorResponse(w, r, mautrix.MInvalidParam.WithMessage("Unsupported preview image format %q", format))
 			return
 		}
 		newPreviews = append(newPreviews, &database.PreviewImage{
@@ -158,14 +147,14 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 		theme, err = db.Theme.Get(r.Context(), themeID)
 		if err != nil {
 			log.Err(err).Msg("Failed to get theme")
-			return err
+			return mautrix.MUnknown.WithMessage("Failed to get theme %q", themeID)
 		} else if theme == nil && commitVersion != 1 {
-			return fmt.Errorf("theme not found")
+			return mautrix.MNotFound.WithMessage("Theme %q not found", themeID)
 		} else if theme != nil {
 			if commitVersion != theme.LatestCommit.Version+1 {
-				return fmt.Errorf("invalid commit version")
+				return ErrConflict
 			} else if !slices.Contains(theme.Admins, userID) {
-				return fmt.Errorf("not an admin")
+				return mautrix.MForbidden.WithMessage("You're not an admin of %q", themeID)
 			}
 		}
 		if theme == nil || theme.Name != themeName {
@@ -227,9 +216,13 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		log.Err(err).Msg("Failed to save theme")
-		// TODO write body
-		w.WriteHeader(http.StatusInternalServerError)
+		var respErr mautrix.RespError
+		if errors.As(err, &respErr) {
+			sendErrorResponse(w, r, respErr)
+		} else {
+			log.Err(err).Msg("Failed to save theme")
+			sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to save theme %q", themeID))
+		}
 		return
 	}
 	w.Header().Set("Location", fmt.Sprintf("/theme/%s", themeID))

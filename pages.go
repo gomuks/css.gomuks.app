@@ -28,6 +28,7 @@ import (
 	"github.com/rs/zerolog/hlog"
 	"go.mau.fi/util/exerrors"
 	_ "golang.org/x/image/webp"
+	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/id"
 
 	"css.gomuks.app/database"
@@ -38,6 +39,18 @@ type ThemePageData struct {
 	Themes  []*database.Theme  `json:"themes,omitempty"`
 	Commit  *database.Commit   `json:"commit,omitempty"`
 	Commits []*database.Commit `json:"commits,omitempty"`
+
+	StatusCode int    `json:"-"`
+	ErrCode    string `json:"errcode,omitempty"`
+	Error      string `json:"error,omitempty"`
+}
+
+func sendErrorResponse(w http.ResponseWriter, r *http.Request, error mautrix.RespError) {
+	sendResponse(w, r, "", "error.gohtml", &ThemePageData{
+		StatusCode: error.StatusCode,
+		ErrCode:    error.ErrCode,
+		Error:      error.Err,
+	})
 }
 
 func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template string, data *ThemePageData) {
@@ -45,6 +58,9 @@ func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template st
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if (data.Commit != nil || data.Commits != nil) && data.Theme != nil {
 			data.Theme.LatestCommit = nil
+		}
+		if template == "error.gohtml" {
+			w.WriteHeader(data.StatusCode)
 		}
 		exerrors.PanicIfNotNil(json.NewEncoder(w).Encode(data))
 	} else if r.Header.Get("Accept") == "text/css" {
@@ -61,8 +77,11 @@ func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template st
 		}
 	} else {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if template == "error.gohtml" {
+			w.WriteHeader(data.StatusCode)
+		}
 		exerrors.PanicIfNotNil(Templates.ExecuteTemplate(w, "container.gohtml", &ContainerData{
-			User:      verifyCookie(r),
+			User:      readCookie(r),
 			PageTitle: pageTitle,
 			Page:      template,
 			Data:      data,
@@ -77,8 +96,7 @@ func getIndexPage(w http.ResponseWriter, r *http.Request) {
 	themes, err := db.Theme.GetAll(r.Context())
 	if err != nil {
 		hlog.FromRequest(r).Err(err).Msg("Failed to get themes")
-		w.WriteHeader(http.StatusInternalServerError)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get all themes"))
 		return
 	}
 	sendResponse(w, r, "", "index.gohtml", &ThemePageData{Themes: themes})
@@ -89,8 +107,7 @@ func getUserPage(w http.ResponseWriter, r *http.Request) {
 	themes, err := db.Theme.GetByAdmin(r.Context(), userID)
 	if err != nil {
 		hlog.FromRequest(r).Err(err).Msg("Failed to get themes")
-		w.WriteHeader(http.StatusInternalServerError)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get themes of user %q", userID))
 		return
 	}
 	sendResponse(w, r, string(userID), "index.gohtml", &ThemePageData{Themes: themes})
@@ -113,12 +130,10 @@ func getThemePage(w http.ResponseWriter, r *http.Request) {
 	theme, err := db.Theme.Get(r.Context(), themeID)
 	if err != nil {
 		hlog.FromRequest(r).Err(err).Msg("Failed to get theme")
-		w.WriteHeader(http.StatusInternalServerError)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get theme %q", themeID))
 		return
 	} else if theme == nil {
-		w.WriteHeader(http.StatusNotFound)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MNotFound.WithMessage("Theme %q not found", themeID))
 		return
 	}
 	var commit *database.Commit
@@ -126,19 +141,16 @@ func getThemePage(w http.ResponseWriter, r *http.Request) {
 	if versionStr := getValueWithSuffix(r, "version"); versionStr != "" {
 		version, err := strconv.Atoi(versionStr)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			// TODO write body
+			sendErrorResponse(w, r, mautrix.MInvalidParam.WithMessage("Invalid version value %q", versionStr))
 			return
 		}
 		commit, err = db.Commit.Get(r.Context(), themeID, version)
 		if err != nil {
 			hlog.FromRequest(r).Err(err).Msg("Failed to get commit")
-			w.WriteHeader(http.StatusInternalServerError)
-			// TODO write body
+			sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get commit %d of theme %q", version, themeID))
 			return
 		} else if commit == nil {
-			w.WriteHeader(http.StatusNotFound)
-			// TODO write body
+			sendErrorResponse(w, r, mautrix.MNotFound.WithMessage("Commit %d of theme %q not found", version, themeID))
 			return
 		}
 		title += " - v" + versionStr
@@ -154,19 +166,16 @@ func getThemeHistoryPage(w http.ResponseWriter, r *http.Request) {
 	theme, err := db.Theme.Get(r.Context(), themeID)
 	if err != nil {
 		hlog.FromRequest(r).Err(err).Msg("Failed to get theme")
-		w.WriteHeader(http.StatusInternalServerError)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get theme %q", themeID))
 		return
 	} else if theme == nil {
-		w.WriteHeader(http.StatusNotFound)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MNotFound.WithMessage("Theme %q not found", themeID))
 		return
 	}
 	commits, err := db.Commit.GetAll(r.Context(), themeID)
 	if err != nil {
 		hlog.FromRequest(r).Err(err).Msg("Failed to get commits")
-		w.WriteHeader(http.StatusInternalServerError)
-		// TODO write body
+		sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get commits of theme %q", themeID))
 		return
 	}
 	for _, commit := range commits {
@@ -176,10 +185,8 @@ func getThemeHistoryPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func getThemeEditPage(w http.ResponseWriter, r *http.Request) {
-	userID := verifyCookie(r)
+	userID := verifyCookie(w, r)
 	if userID == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		// TODO write body
 		return
 	}
 	themeID := database.ThemeID(r.PathValue("themeID"))
@@ -190,16 +197,13 @@ func getThemeEditPage(w http.ResponseWriter, r *http.Request) {
 		theme, err = db.Theme.Get(r.Context(), themeID)
 		if err != nil {
 			hlog.FromRequest(r).Err(err).Msg("Failed to get theme")
-			w.WriteHeader(http.StatusInternalServerError)
-			// TODO write body
+			sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get theme %q", themeID))
 			return
 		} else if theme == nil {
-			w.WriteHeader(http.StatusNotFound)
-			// TODO write body
+			sendErrorResponse(w, r, mautrix.MNotFound.WithMessage("Theme %q not found", themeID))
 			return
 		} else if !slices.Contains(theme.Admins, userID) {
-			w.WriteHeader(http.StatusForbidden)
-			// TODO write body
+			sendErrorResponse(w, r, mautrix.MForbidden.WithMessage("You're not an admin of %q", themeID))
 			return
 		}
 		pageTitle = "edit " + theme.Name
