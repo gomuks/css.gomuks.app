@@ -171,9 +171,10 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 		if theme == nil || theme.Name != themeName {
 			if theme == nil {
 				theme = &database.Theme{
-					ID:     themeID,
-					Name:   themeName,
-					Admins: []id.UserID{userID},
+					ID:           themeID,
+					Name:         themeName,
+					Admins:       []id.UserID{userID},
+					LatestCommit: &database.Commit{},
 				}
 				err = db.Theme.Create(ctx, theme)
 				if err != nil {
@@ -218,7 +219,7 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return fmt.Errorf("failed to add commit: %w", err)
 		}
-		theme.LatestCommit = *commit
+		theme.LatestCommit = commit
 		err = db.Theme.SetLatestCommit(ctx, theme.ID, commit.Version)
 		if err != nil {
 			return fmt.Errorf("failed to update latest theme commit: %w", err)

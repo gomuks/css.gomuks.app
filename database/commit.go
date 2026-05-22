@@ -57,7 +57,7 @@ func (cq *CommitQuery) Add(ctx context.Context, commit *Commit) error {
 }
 
 type Commit struct {
-	ThemeID     ThemeID     `json:"theme_id"`
+	ThemeID     ThemeID     `json:"theme_id,omitempty"`
 	Version     int         `json:"version"`
 	Message     string      `json:"message"`
 	CreatedAt   time.Time   `json:"created_at"`

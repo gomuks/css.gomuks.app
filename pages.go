@@ -43,8 +43,15 @@ type ThemePageData struct {
 func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template string, data *ThemePageData) {
 	if r.Header.Get("Accept") == "application/json" {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if (data.Commit != nil || data.Commits != nil) && data.Theme != nil {
+			data.Theme.LatestCommit = nil
+		}
 		exerrors.PanicIfNotNil(json.NewEncoder(w).Encode(data))
-	} else if r.Header.Get("Accept") == "text/css" && data.Theme != nil {
+	} else if r.Header.Get("Accept") == "text/css" {
+		if data.Theme == nil || data.Commits != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 		w.Header().Set("Cross-Origin-Resource-Policy", "cross-origin")
 		if data.Commit != nil {
@@ -64,6 +71,9 @@ func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template st
 }
 
 func getIndexPage(w http.ResponseWriter, r *http.Request) {
+	if strings.HasSuffix(r.URL.Path, ".json") {
+		r.Header.Set("Accept", "application/json")
+	}
 	themes, err := db.Theme.GetAll(r.Context())
 	if err != nil {
 		hlog.FromRequest(r).Err(err).Msg("Failed to get themes")
@@ -75,7 +85,7 @@ func getIndexPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUserPage(w http.ResponseWriter, r *http.Request) {
-	userID := id.UserID(r.PathValue("userID"))
+	userID := id.UserID(getValueWithSuffix(r, "userID"))
 	themes, err := db.Theme.GetByAdmin(r.Context(), userID)
 	if err != nil {
 		hlog.FromRequest(r).Err(err).Msg("Failed to get themes")
@@ -137,6 +147,9 @@ func getThemePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func getThemeHistoryPage(w http.ResponseWriter, r *http.Request) {
+	if strings.HasSuffix(r.URL.Path, ".json") {
+		r.Header.Set("Accept", "application/json")
+	}
 	themeID := database.ThemeID(r.PathValue("themeID"))
 	theme, err := db.Theme.Get(r.Context(), themeID)
 	if err != nil {
@@ -155,6 +168,9 @@ func getThemeHistoryPage(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		// TODO write body
 		return
+	}
+	for _, commit := range commits {
+		commit.ThemeID = ""
 	}
 	sendResponse(w, r, theme.Name+" - history", "theme-history.gohtml", &ThemePageData{Theme: theme, Commits: commits})
 }

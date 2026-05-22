@@ -30,8 +30,8 @@ const (
 	getAllThemesQuery = `
 		SELECT
 			id, name,
-			COALESCE(commit.version, 0), commit.created_at, COALESCE(commit.created_by, ''), COALESCE(commit.content, ''),
-			COALESCE(commit.description, ''), COALESCE(commit.preview_images, '{}'::uuid[]),
+			COALESCE(commit.version, 0), commit.created_at, COALESCE(commit.created_by, ''), COALESCE(commit.message, ''),
+			COALESCE(commit.content, ''), COALESCE(commit.description, ''), COALESCE(commit.preview_images, '{}'::uuid[]),
 			ARRAY(SELECT user_id FROM admin WHERE theme_id = theme.id)
 		FROM theme
 		LEFT JOIN commit ON theme.id = commit.theme_id AND theme.last_commit = commit.version
@@ -105,16 +105,17 @@ type Theme struct {
 	ID   ThemeID `json:"id"`
 	Name string  `json:"name"`
 
-	LatestCommit Commit      `json:"latest_commit"`
+	LatestCommit *Commit     `json:"latest_commit,omitempty"`
 	Admins       []id.UserID `json:"admins,omitempty"`
 }
 
 func (t *Theme) Scan(row dbutil.Scannable) (*Theme, error) {
+	t.LatestCommit = &Commit{}
 	var admins []string
 	err := row.Scan(
 		&t.ID, &t.Name,
-		&t.LatestCommit.Version, &t.LatestCommit.CreatedAt, &t.LatestCommit.CreatedBy, &t.LatestCommit.Content,
-		&t.LatestCommit.Description, pq.Array(&t.LatestCommit.Previews),
+		&t.LatestCommit.Version, &t.LatestCommit.CreatedAt, &t.LatestCommit.CreatedBy, &t.LatestCommit.Message,
+		&t.LatestCommit.Content, &t.LatestCommit.Description, pq.Array(&t.LatestCommit.Previews),
 		pq.Array(&admins),
 	)
 	if err != nil {

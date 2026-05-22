@@ -72,10 +72,12 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", getIndexPage)
+	mux.HandleFunc("GET /index.json", getIndexPage)
 	mux.HandleFunc("GET /user/{userID}", getUserPage)
 	mux.HandleFunc("GET /theme/{themeID}", getThemePage)
 	mux.HandleFunc("GET /theme/{themeID}/commit/{version}", getThemePage)
 	mux.HandleFunc("GET /theme/{themeID}/commits", getThemeHistoryPage)
+	mux.HandleFunc("GET /theme/{themeID}/commits.json", getThemeHistoryPage)
 	mux.HandleFunc("GET /theme/{themeID}/edit", getThemeEditPage)
 	mux.HandleFunc("GET /theme/new", getThemeEditPage)
 	mux.HandleFunc("POST /theme/commit", postThemeEditPage)
