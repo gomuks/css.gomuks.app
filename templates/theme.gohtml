@@ -52,7 +52,9 @@
 <section>
     <h3>Previews</h3>
     {{ range $index, $img := $commit.Previews }}
-        <img class="preview-image" src="/image/{{ $img }}" alt="Preview image #{{ add $index 1 }}" />
+        <a href="/image/{{ $img }}" target="_blank">
+            <img class="preview-image" src="/image/{{ $img }}" alt="Preview image #{{ add $index 1 }}" />
+        </a>
     {{ end }}
     {{ if not $commit.Previews }}
         <p>None 😿</p>
