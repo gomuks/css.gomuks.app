@@ -17,16 +17,16 @@
             To log in, use the button in gomuks web settings.
         {{ end }}
     </header>
-    <main>
-        {{ if eq .Page "index.gohtml" }}
+    <main class="page-{{ .Page }}">
+        {{ if eq .Page "index" }}
             {{ template "index.gohtml" .Data }}
-        {{ else if eq .Page "theme.gohtml" }}
+        {{ else if eq .Page "theme" }}
             {{ template "theme.gohtml" .Data }}
-        {{ else if eq .Page "theme-edit.gohtml" }}
+        {{ else if eq .Page "theme-edit" }}
             {{ template "theme-edit.gohtml" .Data }}
-        {{ else if eq .Page "theme-history.gohtml" }}
+        {{ else if eq .Page "theme-history" }}
             {{ template "theme-history.gohtml" .Data }}
-        {{ else if eq .Page "error.gohtml" }}
+        {{ else if eq .Page "error" }}
             {{ template "error.gohtml" .Data }}
         {{ end }}
     </main>
