@@ -1,7 +1,8 @@
--- v0 -> v2 (compatible with v2+): Latest schema
+-- v0 -> v3 (compatible with v2+): Latest schema
 CREATE TABLE theme (
     id          TEXT PRIMARY KEY,
     name        TEXT NOT NULL,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_commit INTEGER
 );
 

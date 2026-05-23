@@ -19,6 +19,7 @@ package database
 import (
 	"context"
 	"slices"
+	"time"
 
 	"github.com/lib/pq"
 	"go.mau.fi/util/dbutil"
@@ -29,7 +30,7 @@ import (
 const (
 	getAllThemesQuery = `
 		SELECT
-			id, name,
+			id, name, theme.created_at,
 			COALESCE(commit.version, 0), commit.created_at, COALESCE(commit.created_by, ''), COALESCE(commit.message, ''),
 			COALESCE(commit.content, ''), COALESCE(commit.description, ''), COALESCE(commit.preview_images, '{}'::uuid[]),
 			ARRAY(SELECT user_id FROM admin WHERE theme_id = theme.id)
@@ -39,11 +40,11 @@ const (
 	getThemeByIDQuery     = getAllThemesQuery + `WHERE id = $1`
 	getThemesByAdminQuery = getAllThemesQuery + `INNER JOIN admin ON theme.id = admin.theme_id AND admin.user_id = $1`
 	createThemeQuery      = `
-		INSERT INTO theme (id, name, last_commit)
-		VALUES ($1, $2, $3)
+		INSERT INTO theme (id, name, created_at, last_commit)
+		VALUES ($1, $2, $3, $4)
 	`
 	updateThemeQuery = `
-		UPDATE theme SET name = $2, last_commit = $3 WHERE id = $1
+		UPDATE theme SET name = $2, last_commit = $4 WHERE id = $1
 	`
 	setLatestThemeCommitQuery = `UPDATE theme SET last_commit = $2 WHERE id = $1`
 	deleteThemeQuery          = `
@@ -102,8 +103,9 @@ func (tq *ThemeQuery) RemoveAdmin(ctx context.Context, themeID ThemeID, adminID 
 type ThemeID string
 
 type Theme struct {
-	ID   ThemeID `json:"id"`
-	Name string  `json:"name"`
+	ID        ThemeID   `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
 
 	LatestCommit *Commit     `json:"latest_commit,omitempty"`
 	Admins       []id.UserID `json:"admins,omitempty"`
@@ -113,7 +115,7 @@ func (t *Theme) Scan(row dbutil.Scannable) (*Theme, error) {
 	t.LatestCommit = &Commit{}
 	var admins []string
 	err := row.Scan(
-		&t.ID, &t.Name,
+		&t.ID, &t.Name, &t.CreatedAt,
 		&t.LatestCommit.Version, &t.LatestCommit.CreatedAt, &t.LatestCommit.CreatedBy, &t.LatestCommit.Message,
 		&t.LatestCommit.Content, &t.LatestCommit.Description, pq.Array(&t.LatestCommit.Previews),
 		pq.Array(&admins),
@@ -130,7 +132,7 @@ func (t *Theme) sqlVariables() []any {
 	if t.LatestCommit.Version > 0 {
 		lastCommitID = &t.LatestCommit.Version
 	}
-	return []any{t.ID, t.Name, lastCommitID}
+	return []any{t.ID, t.Name, t.CreatedAt, lastCommitID}
 }
 
 func (t *Theme) IsAdmin(userID id.UserID) bool {
