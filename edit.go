@@ -204,6 +204,16 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 			}
 			commit.Previews = append(commit.Previews, preview.ID)
 		}
+		firstPreviewID, _ := uuid.Parse(r.Form.Get("first_preview"))
+		if firstPreviewID != uuid.Nil {
+			wantedFirstPreviewIndex := slices.IndexFunc(commit.Previews, func(p uuid.UUID) bool {
+				return p == firstPreviewID
+			})
+			if wantedFirstPreviewIndex > 0 {
+				copy(commit.Previews[1:wantedFirstPreviewIndex+1], commit.Previews[0:wantedFirstPreviewIndex])
+				commit.Previews[0] = firstPreviewID
+			}
+		}
 		err = db.Commit.Add(ctx, commit)
 		if err != nil {
 			return fmt.Errorf("failed to add commit: %w", err)

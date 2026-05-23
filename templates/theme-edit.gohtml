@@ -42,6 +42,10 @@
                     <input type="checkbox" name="delete_preview" value="{{ $img }}" />
                     Delete image
                 </label>
+                <label>
+                    <input type="radio" name="first_preview" value="{{ $img }}" {{ if eq $index 0 }}checked{{ end }} />
+                    Set as first preview
+                </label>
             {{ end }}
         {{ end }}
     </label>
