@@ -1,5 +1,18 @@
-<ul>
-    {{ range .Themes }}
-        <li><a href="/theme/{{ .ID }}">{{ or .Name .ID }} by {{ .Admins }}</a></li>
-    {{ end }}
-</ul>
+{{ range .Themes }}
+    <article class="theme-card">
+        <a class="image" href="/theme/{{ .ID }}">
+            <img
+                src="{{ if .LatestCommit.Previews }}/image/{{ index .LatestCommit.Previews 0 }}{{ else }}/static/no-image.svg{{ end }}"
+                class="{{ if not .LatestCommit.Previews }}no-image{{ end }}"
+                alt="Preview image"
+            />
+        </a>
+        <div class="metadata">
+            <h2 class="nowrap"><a href="/theme/{{ .ID }}">{{ or .Name .ID }}</a></h2>
+            <p class="author small-text nowrap">by {{ index .Admins 0 }}{{ if gt (len .Admins) 1 }}, et al.{{ end }}</p>
+            <p class="description">
+                {{ .LatestCommit.Description }}
+            </p>
+        </div>
+    </article>
+{{ end }}

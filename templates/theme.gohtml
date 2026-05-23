@@ -3,35 +3,67 @@
     {{ $commit = .Commit }}
 {{ end }}
 
-<p>
-    Theme {{ .Theme.ID }} v{{ $commit.Version }} by {{ .Theme.Admins }}
-</p>
-<p>
-    {{ $commit.Description }}
-</p>
-<p>
-    Last updated at {{ $commit.CreatedAt }}
-</p>
+<section>
+    <h1>{{ .Theme.Name }}</h1>
+    <div class="authors">
+        <code>{{ .Theme.ID }}</code> v{{ $commit.Version }}
+        by
+        {{ range $index, $admin := .Theme.Admins }}
+            {{ if $index }}, {{ end }}
+            <a href="/user/{{ $admin }}">{{ $admin }}</a>
+        {{ end }}
+        -
+        {{ if .Commit }}
+            <a href="/theme/{{ .Theme.ID }}/commit/{{ $commit.Version }}.css">Raw CSS without autoupdate</a>
+            <a href="/theme/{{ .Theme.ID }}">Latest version</a>
+            <a href="/theme/{{ .Theme.ID }}/commits">Version history</a>
+        {{ else }}
+            <a href="/theme/{{ .Theme.ID }}.css">Raw CSS</a>
+            (or <a href="/theme/{{ .Theme.ID }}/commit/{{ $commit.Version }}.css">without autoupdate</a>)
+            <a href="/theme/{{ .Theme.ID }}/commits">Version history</a>
+            <a href="/theme/{{ .Theme.ID }}/edit">Edit theme</a>
+        {{ end }}
+    </div>
+    {{ if not .Commit }}
+        <div class="last-updated small-text">
+            {{ $commit.CreatedAt }}
+        </div>
+    {{ end }}
+</section>
+
 {{ if .Commit }}
-    <p>
-        Commit message: {{ .Commit.Message }}
+    <section>
+        <h3>Commit info</h3>
+        <div class="last-updated">
+            Committed at {{ $commit.CreatedAt }} by <a href="/user/{{ $commit.CreatedBy }}">{{ $commit.CreatedBy }}</a>
+        </div>
+        <blockquote class="commit-message">
+            {{ .Commit.Message }}
+        </blockquote>
+    </section>
+{{ end }}
+<section>
+    <h3>Description</h3>
+    <p class="theme-description">
+        {{ $commit.Description }}
     </p>
-{{ end }}
-<div>
-    <a href="/theme/{{ .Theme.ID }}.css">Raw CSS</a>
-    (or <a href="/theme/{{ .Theme.ID }}/commit/{{ $commit.Version }}.css">without autoupdate</a>)
-    <a href="/theme/{{ .Theme.ID }}/commits">Version history</a>
-    <a href="/theme/{{ .Theme.ID }}/edit">Edit theme</a>
-</div>
-<div>
-    To use the theme, paste this into your custom CSS:
+</section>
+
+<section>
+    <h3>Previews</h3>
+    {{ range $index, $img := $commit.Previews }}
+        <img class="preview-image" src="/image/{{ $img }}" alt="Preview image #{{ add $index 1 }}" />
+    {{ end }}
+</section>
+
+<section>
+    <h3>Code</h3>
+    <p>
+        To use this theme, paste this into your custom CSS:
+    </p>
     <pre><code class="language-css">@import url("https://css.gomuks.app/theme/{{ .Theme.ID }}.css");</code></pre>
-</div>
-
-{{ range $index, $img := $commit.Previews }}
-    <img src="/image/{{ $img }}" alt="Preview image #{{ add $index 1 }}" />
-{{ end }}
-
-<pre><code class="language-css">
-    {{- $commit.Content -}}
-</code></pre>
+    <p>
+        Full CSS:
+    </p>
+    <pre><code class="language-css">{{ $commit.Content }}</code></pre>
+</section>

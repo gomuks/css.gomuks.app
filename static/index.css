@@ -1,0 +1,119 @@
+html {
+    font-size: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+}
+
+pre, code {
+    font-family: "Fira Code", monospace;
+}
+
+pre {
+    background-color: #f5f5f5;
+    padding: .5rem;
+    border-radius: .25rem;
+    overflow-x: auto;
+}
+
+body, h1, h2, h3, h4, p, blockquote {
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    padding: .5rem;
+}
+
+main.page-index {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    padding: 1rem;
+}
+
+main.page-theme {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+    flex-direction: column;
+    max-width: 60rem;
+    margin: auto;
+    gap: 1rem;
+
+    img.preview-image {
+        max-width: 100%;
+    }
+}
+
+.nowrap {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.small-text {
+    font-size: .875rem;
+    color: #666;
+}
+
+blockquote {
+    border-left: .25rem solid #ccc;
+    padding-left: .25rem;
+}
+
+.theme-card {
+    background-color: white;
+    border-radius: .5rem;
+    border: 1px solid #ccc;
+    max-width: 20rem;
+    height: 24rem;
+    width: 100%;
+
+    display: grid;
+    grid-template: "image" 50% "metadata" 50% / 1fr;
+    overflow: hidden;
+
+    a {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    > a.image {
+        grid-area: image;
+        display: flex;
+
+        > img {
+            width: 100%;
+            object-fit: cover;
+            border-top-right-radius: .5rem;
+            border-top-left-radius: .5rem;
+        }
+        border-bottom: 1px solid #ccc;
+    }
+
+    > div.metadata {
+        grid-area: metadata;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+
+        > h2 {
+            font-size: 1.25rem;
+            margin-bottom: .125rem;
+        }
+
+        > p.author {
+            margin-bottom: .75rem;
+        }
+
+        > p.description {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+        }
+    }
+}
