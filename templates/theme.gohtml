@@ -26,7 +26,7 @@
     </div>
     {{ if not .Commit }}
         <div class="last-updated small-text">
-            {{ $commit.CreatedAt }}
+            Last updated at {{ $commit.CreatedAt }}
         </div>
     {{ end }}
 </section>
@@ -53,6 +53,9 @@
     <h3>Previews</h3>
     {{ range $index, $img := $commit.Previews }}
         <img class="preview-image" src="/image/{{ $img }}" alt="Preview image #{{ add $index 1 }}" />
+    {{ end }}
+    {{ if not $commit.Previews }}
+        <p>None 😿</p>
     {{ end }}
 </section>
 
