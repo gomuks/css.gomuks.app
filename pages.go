@@ -17,9 +17,11 @@
 package main
 
 import (
+	"cmp"
 	"encoding/json"
 	_ "image/jpeg"
 	_ "image/png"
+	"math/rand/v2"
 	"net/http"
 	"slices"
 	"strconv"
@@ -99,7 +101,32 @@ func getIndexPage(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get all themes"))
 		return
 	}
+	sortThemes(themes, r.URL.Query().Get("sort"), r.URL.Query().Get("dir"))
 	sendResponse(w, r, "", "index", &ThemePageData{Themes: themes})
+}
+
+func sortThemes(themes []*database.Theme, sortBy, direction string) {
+	switch sortBy {
+	case "create":
+		slices.SortFunc(themes, func(a, b *database.Theme) int {
+			return a.CreatedAt.Compare(b.CreatedAt)
+		})
+	case "update":
+		slices.SortFunc(themes, func(a, b *database.Theme) int {
+			return a.LatestCommit.CreatedAt.Compare(b.LatestCommit.CreatedAt)
+		})
+	case "alpha":
+		slices.SortFunc(themes, func(a, b *database.Theme) int {
+			return cmp.Compare(a.Name, b.Name)
+		})
+	case "", "random":
+		rand.Shuffle(len(themes), func(i, j int) {
+			themes[i], themes[j] = themes[j], themes[i]
+		})
+	}
+	if direction == "desc" {
+		slices.Reverse(themes)
+	}
 }
 
 func getUserPage(w http.ResponseWriter, r *http.Request) {
@@ -110,6 +137,7 @@ func getUserPage(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get themes of user %q", userID))
 		return
 	}
+	sortThemes(themes, r.URL.Query().Get("sort"), r.URL.Query().Get("dir"))
 	sendResponse(w, r, string(userID), "index", &ThemePageData{Themes: themes})
 }
 

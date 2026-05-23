@@ -30,6 +30,10 @@ main.page-index {
     gap: 1rem;
     justify-content: center;
     padding: 1rem;
+
+    > div.order-by {
+        width: 100%;
+    }
 }
 
 main.page-theme {

@@ -1,3 +1,10 @@
+<div class="order-by">
+    Order by:
+    <a href="?">Random</a>
+    <a href="?sort=create&dir=desc">Last created</a>
+    <a href="?sort=update&dir=desc">Last updated</a>
+    <a href="?sort=alpha&dir=asc">Alphabetical</a>
+</div>
 {{ range .Themes }}
     <article class="theme-card">
         <a class="image" href="/theme/{{ .ID }}">
