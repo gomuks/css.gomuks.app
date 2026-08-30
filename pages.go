@@ -78,11 +78,7 @@ func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template st
 		w.Header().Set("Cross-Origin-Resource-Policy", "cross-origin")
 		if data.Commit != nil {
 			w.Header().Set("Cache-Control", "public,max-age=31536000,immutable")
-			if fresh {
-				w.WriteHeader(http.StatusNotModified)
-			} else {
-				_, _ = w.Write([]byte(data.Commit.Content))
-			}
+			_, _ = w.Write([]byte(data.Commit.Content))
 		} else {
 			w.Header().Set("Cache-Control", "public,max-age=3600,stale-if-error=604800")
 			w.Header().Set("ETag", fmt.Sprintf(`"%d"`, data.Theme.LatestCommit.Version))
