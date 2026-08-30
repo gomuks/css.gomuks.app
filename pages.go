@@ -19,6 +19,7 @@ package main
 import (
 	"cmp"
 	"encoding/json"
+	"fmt"
 	_ "image/jpeg"
 	_ "image/png"
 	"math/rand/v2"
@@ -70,12 +71,23 @@ func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template st
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
+		var fresh bool
+		if strings.Trim(r.Header.Get("If-None-Match"), "\"") == strconv.Itoa(data.Theme.LatestCommit.Version) {
+			fresh = true
+		}
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 		w.Header().Set("Cross-Origin-Resource-Policy", "cross-origin")
 		if data.Commit != nil {
+			w.Header().Set("Cache-Control", "public,max-age=31536000,immutable")
 			_, _ = w.Write([]byte(data.Commit.Content))
 		} else {
-			_, _ = w.Write([]byte(data.Theme.LatestCommit.Content))
+			w.Header().Set("Cache-Control", "public,max-age=3600,stale-if-error=604800")
+			w.Header().Set("ETag", fmt.Sprintf(`"%d"`, data.Theme.LatestCommit.Version))
+			if fresh {
+				w.WriteHeader(http.StatusNotModified)
+			} else {
+				_, _ = w.Write([]byte(data.Theme.LatestCommit.Content))
+			}
 		}
 	} else {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
