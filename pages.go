@@ -85,7 +85,7 @@ func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template st
 			}
 		} else {
 			w.Header().Set("Cache-Control", "public,max-age=3600,stale-if-error=604800")
-			w.Header().Set("ETag", "\""+strconv.Itoa(data.Theme.LatestCommit.Version)+"\"")
+			w.Header().Set("ETag", fmt.Sprintf(`"%d"`, data.Theme.LatestCommit.Version))
 			if fresh {
 				w.WriteHeader(http.StatusNotModified)
 			} else {
