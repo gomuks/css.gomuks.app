@@ -19,6 +19,7 @@ package main
 import (
 	"cmp"
 	"encoding/json"
+	"fmt"
 	_ "image/jpeg"
 	_ "image/png"
 	"math/rand/v2"
