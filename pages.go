@@ -84,7 +84,7 @@ func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template st
 				_, _ = w.Write([]byte(data.Commit.Content))
 			}
 		} else {
-			w.Header().Set("Cache-Control", "public,max-age=3600,stale-if-error=608400")
+			w.Header().Set("Cache-Control", "public,max-age=3600,stale-if-error=604800")
 			w.Header().Set("ETag", "\""+strconv.Itoa(data.Theme.LatestCommit.Version)+"\"")
 			if fresh {
 				w.WriteHeader(http.StatusNotModified)
