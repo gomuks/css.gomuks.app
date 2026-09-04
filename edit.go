@@ -191,6 +191,9 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 			Content:     commitContent,
 		}
 		commit.Previews = slices.Clone(theme.LatestCommit.Previews)
+		if commit.Previews == nil {
+			commit.Previews = []uuid.UUID{}
+		}
 		commit.Previews = slices.DeleteFunc(commit.Previews, func(p uuid.UUID) bool {
 			return slices.Contains(removedPreviews, p)
 		})
