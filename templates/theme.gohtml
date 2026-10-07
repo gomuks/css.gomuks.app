@@ -26,7 +26,7 @@
     </div>
     {{ if not .Commit }}
         <div class="last-updated small-text">
-            Last updated at {{ $commit.CreatedAt }}
+            Last updated {{ timeformat $commit.CreatedAt }}
         </div>
     {{ end }}
 </section>
@@ -35,13 +35,21 @@
     <section>
         <h3>Commit info</h3>
         <div class="last-updated">
-            Committed at {{ $commit.CreatedAt }} by <a href="/user/{{ $commit.CreatedBy }}">{{ $commit.CreatedBy }}</a>
+            Committed {{ timeformat $commit.CreatedAt }} by <a href="/user/{{ $commit.CreatedBy }}">{{ $commit.CreatedBy }}</a>
         </div>
         <blockquote class="commit-message">
             {{ .Commit.Message }}
         </blockquote>
     </section>
 {{ end }}
+<section class="theme-likes">
+    <span>{{ .Theme.Likes }} {{ if eq .Theme.Likes 1 }}like{{ else }}likes{{ end }}</span>
+    {{ if .User }}
+        <form action="/theme/{{ .Theme.ID }}/like" method="post">
+            <button type="submit" name="action" value="{{ if .Liked }}unlike{{ else }}like{{ end }}">{{ if .Liked }}Unlike{{ else }}Like{{ end }}</button>
+        </form>
+    {{ end }}
+</section>
 <section>
     <h3>Description</h3>
     <p class="theme-description">
@@ -71,4 +79,20 @@
         <summary>Full CSS</summary>
         <pre><code class="language-css">{{ $commit.Content }}</code></pre>
     </details>
+</section>
+
+<section class="comments" id="comments">
+    <h3>Comments</h3>
+    {{ if .User }}
+        <form class="comment-form" action="/theme/{{ .Theme.ID }}/comments" method="post">
+            <label for="comment-text">Add a comment</label>
+            <textarea id="comment-text" name="text" rows="3" maxlength="8192" required></textarea>
+            <button type="submit">Comment</button>
+        </form>
+    {{ end }}
+    {{ range .CommentThreads }}
+        {{ template "comment" . }}
+    {{ else }}
+        <p>No comments yet.</p>
+    {{ end }}
 </section>

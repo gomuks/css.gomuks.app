@@ -21,6 +21,7 @@ import (
 	"html/template"
 	"io/fs"
 	"strings"
+	"time"
 
 	"go.mau.fi/util/exerrors"
 	"maunium.net/go/mautrix/id"
@@ -39,6 +40,9 @@ var templateFuncs = map[string]any{
 			return s[:i]
 		}
 		return s
+	},
+	"timeformat": func(t time.Time) string {
+		return t.UTC().Format("2006-01-02 at 15:04:05 UTC")
 	},
 }
 

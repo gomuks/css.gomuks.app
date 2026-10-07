@@ -56,6 +56,7 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 	if userID == "" {
 		return
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, 5*1024*1024)
 	err := r.ParseMultipartForm(5 * 1024 * 1024)
 	if err != nil {
 		log.Err(err).Msg("Failed to parse form")

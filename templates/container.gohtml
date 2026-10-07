@@ -13,6 +13,8 @@
         <a href="/">Home</a>
         {{ if .User }}
             <a href="/theme/new">New theme</a>
+            <a href="/user/{{ .User }}">My themes</a>
+            <a href="/user/{{ .User }}/likes">Liked themes</a>
             Logged in as <code>{{ .User }}</code>
         {{ else }}
             To log in, use the button in gomuks web settings.
@@ -23,6 +25,8 @@
             {{ template "index.gohtml" .Data }}
         {{ else if eq .Page "theme" }}
             {{ template "theme.gohtml" .Data }}
+        {{ else if eq .Page "comment-action" }}
+            {{ template "comment-action.gohtml" .Data }}
         {{ else if eq .Page "theme-edit" }}
             {{ template "theme-edit.gohtml" .Data }}
         {{ else if eq .Page "theme-history" }}

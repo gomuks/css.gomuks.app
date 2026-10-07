@@ -1,9 +1,16 @@
 <div class="order-by">
+    {{ if .IndexUser }}
+        <h1>{{ .IndexUser }}{{ if .LikedThemes }} - liked themes{{ end }}</h1>
+        <a href="/user/{{ .IndexUser }}">Published themes</a>
+        <a href="/user/{{ .IndexUser }}/likes">Liked themes</a>
+        <br>
+    {{ end }}
     Order by:
     <a href="?">Random</a>
     <a href="?sort=create&dir=desc">Last created</a>
     <a href="?sort=update&dir=desc">Last updated</a>
     <a href="?sort=alpha&dir=asc">Alphabetical</a>
+    <a href="?sort=likes&dir=desc">Most likes</a>
 </div>
 {{ range .Themes }}
     <article class="theme-card">
@@ -22,4 +29,7 @@
             </p>
         </div>
     </article>
+{{ end }}
+{{ if not .Themes }}
+    <p>No themes yet.</p>
 {{ end }}

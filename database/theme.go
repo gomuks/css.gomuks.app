@@ -33,12 +33,14 @@ const (
 			id, name, theme.created_at,
 			COALESCE(commit.version, 0), commit.created_at, COALESCE(commit.created_by, ''), COALESCE(commit.message, ''),
 			COALESCE(commit.content, ''), COALESCE(commit.description, ''), COALESCE(commit.preview_images, '{}'::uuid[]),
-			ARRAY(SELECT user_id FROM admin WHERE theme_id = theme.id)
+			ARRAY(SELECT user_id FROM admin WHERE theme_id = theme.id),
+			(SELECT COUNT(*) FROM "like" WHERE theme_id = theme.id)
 		FROM theme
 		LEFT JOIN commit ON theme.id = commit.theme_id AND theme.last_commit = commit.version
 	`
 	getThemeByIDQuery     = getAllThemesQuery + `WHERE id = $1`
 	getThemesByAdminQuery = getAllThemesQuery + `INNER JOIN admin ON theme.id = admin.theme_id AND admin.user_id = $1`
+	getThemesByLikeQuery  = getAllThemesQuery + `INNER JOIN "like" ON theme.id = "like".theme_id AND "like".user_id = $1`
 	createThemeQuery      = `
 		INSERT INTO theme (id, name, created_at, last_commit)
 		VALUES ($1, $2, $3, $4)
@@ -58,6 +60,9 @@ const (
 	removeThemeAdminQuery = `
 		DELETE FROM admin WHERE theme_id = $1 AND user_id = $2
 	`
+	hasLikeQuery    = `SELECT EXISTS (SELECT 1 FROM "like" WHERE theme_id = $1 AND user_id = $2)`
+	addLikeQuery    = `INSERT INTO "like" (theme_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`
+	deleteLikeQuery = `DELETE FROM "like" WHERE theme_id = $1 AND user_id = $2`
 )
 
 type ThemeQuery struct {
@@ -74,6 +79,23 @@ func (tq *ThemeQuery) GetAll(ctx context.Context) ([]*Theme, error) {
 
 func (tq *ThemeQuery) GetByAdmin(ctx context.Context, admin id.UserID) ([]*Theme, error) {
 	return tq.QueryMany(ctx, getThemesByAdminQuery, admin)
+}
+
+func (tq *ThemeQuery) GetLikedBy(ctx context.Context, userID id.UserID) ([]*Theme, error) {
+	return tq.QueryMany(ctx, getThemesByLikeQuery, userID)
+}
+
+func (tq *ThemeQuery) HasLike(ctx context.Context, themeID ThemeID, userID id.UserID) (bool, error) {
+	var liked bool
+	err := tq.GetDB().QueryRow(ctx, hasLikeQuery, themeID, userID).Scan(&liked)
+	return liked, err
+}
+
+func (tq *ThemeQuery) SetLike(ctx context.Context, themeID ThemeID, userID id.UserID, liked bool) error {
+	if liked {
+		return tq.Exec(ctx, addLikeQuery, themeID, userID)
+	}
+	return tq.Exec(ctx, deleteLikeQuery, themeID, userID)
 }
 
 func (tq *ThemeQuery) Create(ctx context.Context, theme *Theme) error {
@@ -106,6 +128,7 @@ type Theme struct {
 	ID        ThemeID   `json:"id"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
+	Likes     int       `json:"likes"`
 
 	LatestCommit *Commit     `json:"latest_commit,omitempty"`
 	Admins       []id.UserID `json:"admins,omitempty"`
@@ -118,7 +141,7 @@ func (t *Theme) Scan(row dbutil.Scannable) (*Theme, error) {
 		&t.ID, &t.Name, &t.CreatedAt,
 		&t.LatestCommit.Version, &t.LatestCommit.CreatedAt, &t.LatestCommit.CreatedBy, &t.LatestCommit.Message,
 		&t.LatestCommit.Content, &t.LatestCommit.Description, pq.Array(&t.LatestCommit.Previews),
-		pq.Array(&admins),
+		pq.Array(&admins), &t.Likes,
 	)
 	if err != nil {
 		return nil, err

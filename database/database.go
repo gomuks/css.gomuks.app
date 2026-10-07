@@ -29,6 +29,7 @@ type Database struct {
 	Theme        *ThemeQuery
 	Commit       *CommitQuery
 	PreviewImage *PreviewImageQuery
+	Comment      *CommentQuery
 }
 
 func New(uri string, log zerolog.Logger) (*Database, error) {
@@ -44,9 +45,11 @@ func New(uri string, log zerolog.Logger) (*Database, error) {
 		Theme:        &ThemeQuery{dbutil.MakeQueryHelper(db, newTheme)},
 		Commit:       &CommitQuery{dbutil.MakeQueryHelper(db, newCommit)},
 		PreviewImage: &PreviewImageQuery{dbutil.MakeQueryHelper(db, newPreviewImage)},
+		Comment:      &CommentQuery{dbutil.MakeQueryHelper(db, newComment)},
 	}, nil
 }
 
 func newTheme(_ *dbutil.QueryHelper[*Theme]) *Theme                      { return &Theme{} }
 func newCommit(_ *dbutil.QueryHelper[*Commit]) *Commit                   { return &Commit{} }
 func newPreviewImage(_ *dbutil.QueryHelper[*PreviewImage]) *PreviewImage { return &PreviewImage{} }
+func newComment(_ *dbutil.QueryHelper[*Comment]) *Comment                { return &Comment{} }

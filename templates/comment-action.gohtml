@@ -1,0 +1,30 @@
+<h1>{{ if eq .CommentAction "reply" }}Reply to comment{{ else if eq .CommentAction "edit" }}Edit comment{{ else }}Delete comment{{ end }}</h1>
+<p>Theme: <a href="/theme/{{ .Theme.ID }}">{{ .Theme.Name }}</a></p>
+
+{{ if ne .CommentAction "edit" }}
+    <article class="comment">
+        {{ template "comment-content" .Comment }}
+    </article>
+{{ end }}
+
+{{ if eq .CommentAction "delete" }}
+    <p>Are you sure you want to delete this comment?</p>
+    <form class="comment-form" action="/theme/{{ .Theme.ID }}/comments/{{ .Comment.ID }}/delete" method="post">
+        <div class="comment-actions">
+            <button type="submit">Delete comment</button>
+            <a href="/theme/{{ .Theme.ID }}#comment-{{ .Comment.ID }}">Cancel</a>
+        </div>
+    </form>
+{{ else }}
+    <form class="comment-form" action="/theme/{{ .Theme.ID }}/comments{{ if eq .CommentAction "edit" }}/{{ .Comment.ID }}/edit{{ end }}" method="post">
+        {{ if eq .CommentAction "reply" }}
+            <input type="hidden" name="reply_to" value="{{ .Comment.ID }}">
+        {{ end }}
+        <label for="comment-text">{{ if eq .CommentAction "edit" }}Edit your comment{{ else }}Your reply{{ end }}</label>
+        <textarea id="comment-text" name="text" rows="5" maxlength="8192" required autofocus>{{ if eq .CommentAction "edit" }}{{ .Comment.Text }}{{ end }}</textarea>
+        <div class="comment-actions">
+            <button type="submit">{{ if eq .CommentAction "edit" }}Save{{ else }}Reply{{ end }}</button>
+            <a href="/theme/{{ .Theme.ID }}#comment-{{ .Comment.ID }}">Cancel</a>
+        </div>
+    </form>
+{{ end }}

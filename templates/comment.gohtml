@@ -1,0 +1,44 @@
+{{ define "comment" }}
+<article class="comment" id="comment-{{ .ID }}">
+    <div class="comment-content">
+        {{ template "comment-content" .Comment }}
+        {{ if .User }}
+            <div class="comment-actions">
+                <a href="/theme/{{ .ThemeID }}/comments/{{ .ID }}/reply">Reply</a>
+                {{ if and .Text (eq .User .UserID) }}
+                    <a href="/theme/{{ .ThemeID }}/comments/{{ .ID }}/edit">Edit</a>
+                    <a href="/theme/{{ .ThemeID }}/comments/{{ .ID }}/delete">Delete</a>
+                {{ end }}
+            </div>
+        {{ end }}
+    </div>
+    {{ if .Replies }}
+        <div class="comment-replies">
+            {{ range .Replies }}
+                {{ template "comment" . }}
+            {{ end }}
+        </div>
+    {{ end }}
+</article>
+{{ end }}
+
+{{ define "comment-content" }}
+    <div class="comment-sender-and-date">
+        <span class="comment-sender">
+            {{ if .Text }}
+                <a href="/user/{{ .UserID }}">{{ .UserID }}</a>
+            {{ else }}
+                [deleted]
+            {{ end }}
+        </span>
+        <a class="comment-date" href="/theme/{{ .ThemeID }}#comment-{{ .ID }}">
+            {{ timeformat .CreatedAt }}
+            {{ if and .Text .EditedAt }}(edited {{ timeformat .EditedAt }}){{ end }}
+        </a>
+    </div>
+    {{ if .Text }}
+        <p class="comment-text">{{ .Text }}</p>
+    {{ else }}
+        <p class="small-text">[deleted]</p>
+    {{ end }}
+{{ end }}

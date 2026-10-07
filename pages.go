@@ -38,10 +38,19 @@ import (
 )
 
 type ThemePageData struct {
-	Theme   *database.Theme    `json:"theme,omitempty"`
-	Themes  []*database.Theme  `json:"themes,omitempty"`
-	Commit  *database.Commit   `json:"commit,omitempty"`
-	Commits []*database.Commit `json:"commits,omitempty"`
+	Theme    *database.Theme     `json:"theme,omitempty"`
+	Themes   []*database.Theme   `json:"themes,omitempty"`
+	Commit   *database.Commit    `json:"commit,omitempty"`
+	Commits  []*database.Commit  `json:"commits,omitempty"`
+	Comments []*database.Comment `json:"comments,omitempty"`
+	Comment  *database.Comment   `json:"comment,omitempty"`
+	Liked    bool                `json:"liked,omitempty"`
+
+	User           id.UserID        `json:"-"`
+	IndexUser      id.UserID        `json:"-"`
+	LikedThemes    bool             `json:"-"`
+	CommentThreads []*CommentThread `json:"-"`
+	CommentAction  string           `json:"-"`
 
 	StatusCode int    `json:"-"`
 	ErrCode    string `json:"errcode,omitempty"`
@@ -90,6 +99,7 @@ func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template st
 			}
 		}
 	} else {
+		data.User = readCookie(r)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if template == "error" {
 			w.WriteHeader(data.StatusCode)
@@ -127,6 +137,10 @@ func sortThemes(themes []*database.Theme, sortBy, direction string) {
 		slices.SortFunc(themes, func(a, b *database.Theme) int {
 			return a.LatestCommit.CreatedAt.Compare(b.LatestCommit.CreatedAt)
 		})
+	case "likes":
+		slices.SortFunc(themes, func(a, b *database.Theme) int {
+			return cmp.Compare(a.Likes, b.Likes)
+		})
 	case "alpha":
 		slices.SortFunc(themes, func(a, b *database.Theme) int {
 			return cmp.Compare(a.Name, b.Name)
@@ -150,7 +164,22 @@ func getUserPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sortThemes(themes, r.URL.Query().Get("sort"), r.URL.Query().Get("dir"))
-	sendResponse(w, r, string(userID), "index", &ThemePageData{Themes: themes})
+	sendResponse(w, r, string(userID), "index", &ThemePageData{Themes: themes, IndexUser: userID})
+}
+
+func getUserLikesPage(w http.ResponseWriter, r *http.Request) {
+	if strings.HasSuffix(r.URL.Path, ".json") {
+		r.Header.Set("Accept", "application/json")
+	}
+	userID := id.UserID(r.PathValue("userID"))
+	themes, err := db.Theme.GetLikedBy(r.Context(), userID)
+	if err != nil {
+		hlog.FromRequest(r).Err(err).Msg("Failed to get liked themes")
+		sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get liked themes of user %q", userID))
+		return
+	}
+	sortThemes(themes, r.URL.Query().Get("sort"), r.URL.Query().Get("dir"))
+	sendResponse(w, r, fmt.Sprintf("%s - liked themes", userID), "index", &ThemePageData{Themes: themes, IndexUser: userID, LikedThemes: true})
 }
 
 func getValueWithSuffix(r *http.Request, key string) string {
@@ -195,7 +224,25 @@ func getThemePage(w http.ResponseWriter, r *http.Request) {
 		}
 		title += " - v" + versionStr
 	}
-	sendResponse(w, r, title, "theme", &ThemePageData{Theme: theme, Commit: commit})
+	data := &ThemePageData{Theme: theme, Commit: commit, User: readCookie(r)}
+	if r.Header.Get("Accept") != "text/css" {
+		data.Comments, err = db.Comment.GetAll(r.Context(), themeID)
+		if err != nil {
+			hlog.FromRequest(r).Err(err).Msg("Failed to get comments")
+			sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get comments of theme %q", themeID))
+			return
+		}
+		data.CommentThreads = makeCommentThreads(data.Comments, data.User)
+		if data.User != "" {
+			data.Liked, err = db.Theme.HasLike(r.Context(), themeID, data.User)
+			if err != nil {
+				hlog.FromRequest(r).Err(err).Msg("Failed to get like")
+				sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to get like of theme %q", themeID))
+				return
+			}
+		}
+	}
+	sendResponse(w, r, title, "theme", data)
 }
 
 func getThemeHistoryPage(w http.ResponseWriter, r *http.Request) {

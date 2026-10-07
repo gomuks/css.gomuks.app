@@ -36,7 +36,7 @@ main.page-index {
     }
 }
 
-main.page-theme {
+main.page-theme, main.page-comment-action {
     display: flex;
     justify-content: center;
     padding: 1rem;
@@ -119,5 +119,72 @@ blockquote {
             -webkit-line-clamp: 4;
             -webkit-box-orient: vertical;
         }
+    }
+}
+
+main.page-comment-action {
+    > article.comment {
+        margin: 0;
+    }
+}
+
+article.comment {
+    overflow-wrap: anywhere;
+
+    > div.comment-content {
+        margin: .5rem 0;
+    }
+
+    &:target > div.comment-content {
+        background-color: #ccffcc;
+    }
+
+    p.comment-text {
+        white-space: pre-wrap;
+    }
+
+    div.comment-sender-and-date {
+        font-size: .875rem;
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .comment-date {
+            color: #666;
+        }
+    }
+
+    div.comment-actions a {
+        color: inherit;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    div.comment-replies {
+        border-left: 2px solid #ccc;
+        padding-left: .5rem;
+    }
+}
+
+.theme-likes, .comment-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.comment-form {
+    label, textarea {
+        display: block;
+    }
+
+    textarea {
+        width: 100%;
+        box-sizing: border-box;
     }
 }
