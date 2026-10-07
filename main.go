@@ -17,6 +17,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -59,7 +60,7 @@ func main() {
 			Type:   zeroconfig.WriterTypeFile,
 			Format: zeroconfig.LogFormatJSON,
 			FileConfig: zeroconfig.FileConfig{
-				Filename:   "/var/log/gomuks-css.log",
+				Filename:   cmp.Or(os.Getenv("LOG_FILE"), "/var/log/gomuks-css.log"),
 				MaxSize:    100 * 1024,
 				MaxAge:     7,
 				MaxBackups: 10,
