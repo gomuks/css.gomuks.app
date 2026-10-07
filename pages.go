@@ -75,7 +75,7 @@ func sendResponse(w http.ResponseWriter, r *http.Request, pageTitle, template st
 			w.WriteHeader(data.StatusCode)
 		}
 		exerrors.PanicIfNotNil(json.NewEncoder(w).Encode(data))
-	} else if r.Header.Get("Accept") == "text/css" {
+	} else if r.Header.Get("Accept") == "text/css" && template != "error" {
 		if data.Theme == nil || data.Commits != nil {
 			w.WriteHeader(http.StatusNotFound)
 			return

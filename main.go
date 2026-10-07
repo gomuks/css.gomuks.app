@@ -31,8 +31,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
+	"go.mau.fi/meowlnir/policylist"
+	"go.mau.fi/meowlnir/util"
 	"go.mau.fi/util/exerrors"
 	"go.mau.fi/util/exhttp"
+	"go.mau.fi/util/exslices"
 	"go.mau.fi/util/exzerolog"
 	"go.mau.fi/util/ptr"
 	"go.mau.fi/util/requestlog"
@@ -81,6 +84,14 @@ func main() {
 	matrixClient.Log = defLog.With().Str("component", "matrix").Logger()
 	db = exerrors.Must(database.New(os.Getenv("DATABASE_URL"), defLog.With().Str("component", "database").Logger()))
 
+	policylist.HackyRuleFilter = []string{
+		"@tulir:maunium.net", "@nex:nexy7574.co.uk", "@star:starstruck.systems", "@vrkknn:vrkknn.net",
+		"@jade:ellis.link", "@sky:codestorm.net",
+		"maunium.net", "beeper.com", "matrix.org", "nexy7574.co.uk", "starstruck.systems", "vrkknn.net",
+		"ellis.link", "codestorm.net",
+	}
+	policylist.HackyRuleFilterHashes = exslices.CastFunc(policylist.HackyRuleFilter, util.SHA256String)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", getIndexPage)
 	mux.HandleFunc("GET /index.json", getIndexPage)
@@ -115,17 +126,18 @@ func main() {
 			requestlog.AccessLogger(requestlog.Options{
 				TrustXForwardedFor: true,
 			}),
+			lockPolicyActions,
 		),
 	}
 
-	ctx := defLog.WithContext(context.Background())
+	ctx, cancel := signal.NotifyContext(defLog.WithContext(context.Background()), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 	exerrors.PanicIfNotNil(db.Upgrade(ctx))
+	exerrors.PanicIfNotNil(startPolicySync(ctx))
 
 	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		<-c
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		<-ctx.Done()
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 		exerrors.PanicIfNotNil(server.Shutdown(ctx))
 		cancel()
 	}()

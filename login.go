@@ -87,6 +87,9 @@ func verifyCookie(w http.ResponseWriter, r *http.Request) id.UserID {
 		sendErrorResponse(w, r, mautrix.MMissingToken.WithMessage("You're not logged in"))
 	} else if userID := verifyToken(cookie.Value); userID == "" {
 		sendErrorResponse(w, r, mautrix.MUnknownToken.WithMessage("Invalid or expired auth cookie"))
+	} else if policies.isBanned(userID) {
+		http.SetCookie(w, &http.Cookie{Name: cookieName, MaxAge: -1})
+		sendErrorResponse(w, r, mautrix.MForbidden.WithMessage("You're banned by a policy list"))
 	} else {
 		return userID
 	}
@@ -104,6 +107,10 @@ func handleRemoteLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Err(err).Msg("Failed to get OpenID user info")
 		sendErrorResponse(w, r, mautrix.MUnknownToken.WithMessage("Failed to validate OpenID token"))
+		return
+	}
+	if policies.isBanned(resp.Sub) {
+		sendErrorResponse(w, r, mautrix.MForbidden.WithMessage("You're banned by a policy list"))
 		return
 	}
 	cookieExpiry := time.Now().Add(CookieLifetime)

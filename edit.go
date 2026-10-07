@@ -174,6 +174,7 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					return fmt.Errorf("failed to add theme admin: %w", err)
 				}
+				db.ClearContentUserCache()
 			} else {
 				theme.Name = themeName
 				err = db.Theme.Update(ctx, theme)

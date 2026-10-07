@@ -17,9 +17,14 @@
 package database
 
 import (
+	"context"
+	"fmt"
+	"sync/atomic"
+
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog"
 	"go.mau.fi/util/dbutil"
+	"maunium.net/go/mautrix/id"
 
 	"css.gomuks.app/database/upgrades"
 )
@@ -30,6 +35,8 @@ type Database struct {
 	Commit       *CommitQuery
 	PreviewImage *PreviewImageQuery
 	Comment      *CommentQuery
+
+	contentUserCache atomic.Pointer[[]id.UserID]
 }
 
 func New(uri string, log zerolog.Logger) (*Database, error) {
@@ -53,3 +60,34 @@ func newTheme(_ *dbutil.QueryHelper[*Theme]) *Theme                      { retur
 func newCommit(_ *dbutil.QueryHelper[*Commit]) *Commit                   { return &Commit{} }
 func newPreviewImage(_ *dbutil.QueryHelper[*PreviewImage]) *PreviewImage { return &PreviewImage{} }
 func newComment(_ *dbutil.QueryHelper[*Comment]) *Comment                { return &Comment{} }
+
+func (db *Database) ClearContentUserCache() {
+	db.contentUserCache.Store(nil)
+}
+
+func (db *Database) GetContentUsers(ctx context.Context) ([]id.UserID, error) {
+	if cached := db.contentUserCache.Load(); cached != nil {
+		return *cached, nil
+	}
+	rows, err := db.Query(ctx, `SELECT user_id FROM admin UNION SELECT user_id FROM comment WHERE text IS NOT NULL`)
+	return dbutil.NewRowIterWithError(rows, func(row dbutil.Scannable) (id.UserID, error) {
+		var userID id.UserID
+		err := row.Scan(&userID)
+		return userID, err
+	}, err).AsList()
+}
+
+func (db *Database) RemoveUserContent(ctx context.Context, userID id.UserID) error {
+	return db.DoTxn(ctx, nil, func(ctx context.Context) error {
+		for _, query := range []string{
+			`UPDATE theme SET last_commit = NULL WHERE id IN (SELECT theme_id FROM admin WHERE user_id = $1)`,
+			`DELETE FROM theme WHERE id IN (SELECT theme_id FROM admin WHERE user_id = $1)`,
+			`UPDATE comment SET text = NULL, edited_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND text IS NOT NULL`,
+		} {
+			if _, err := db.Exec(ctx, query, userID); err != nil {
+				return fmt.Errorf("failed to remove content of %s: %w", userID, err)
+			}
+		}
+		return nil
+	})
+}

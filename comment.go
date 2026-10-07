@@ -115,6 +115,7 @@ func postThemeComment(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, r, mautrix.MUnknown.WithMessage("Failed to add comment"))
 		return
 	}
+	db.ClearContentUserCache()
 	http.Redirect(w, r, "/theme/"+string(theme.ID)+"#comment-"+comment.ID.String(), http.StatusSeeOther)
 }
 
