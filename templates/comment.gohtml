@@ -9,6 +9,9 @@
                     <a href="/theme/{{ .ThemeID }}/comments/{{ .ID }}/edit">Edit</a>
                     <a href="/theme/{{ .ThemeID }}/comments/{{ .ID }}/delete">Delete</a>
                 {{ end }}
+                {{ if .Text }}
+                    <a href="/theme/{{ .ThemeID }}/comments/{{ .ID }}/report">Report</a>
+                {{ end }}
             </div>
         {{ end }}
     </div>

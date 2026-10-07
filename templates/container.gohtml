@@ -27,6 +27,8 @@
             {{ template "theme.gohtml" .Data }}
         {{ else if eq .Page "comment-action" }}
             {{ template "comment-action.gohtml" .Data }}
+        {{ else if eq .Page "report" }}
+            {{ template "report.gohtml" .Data }}
         {{ else if eq .Page "theme-edit" }}
             {{ template "theme-edit.gohtml" .Data }}
         {{ else if eq .Page "theme-history" }}

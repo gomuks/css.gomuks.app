@@ -37,6 +37,8 @@ import (
 	"go.mau.fi/util/ptr"
 	"go.mau.fi/util/requestlog"
 	"go.mau.fi/zeroconfig"
+	"maunium.net/go/mautrix"
+	"maunium.net/go/mautrix/id"
 
 	"css.gomuks.app/database"
 )
@@ -49,6 +51,7 @@ func init() {
 
 var defLog *zerolog.Logger
 var db *database.Database
+var matrixClient *mautrix.Client
 
 func main() {
 	defLog = exerrors.Must((&zeroconfig.Config{
@@ -69,6 +72,13 @@ func main() {
 		MinLevel: ptr.Ptr(zerolog.TraceLevel),
 	}).Compile())
 	exzerolog.SetupDefaults(defLog)
+	matrixClient = exerrors.Must(mautrix.NewClient(
+		os.Getenv("MATRIX_HOMESERVER_URL"),
+		id.UserID(os.Getenv("MATRIX_USER_ID")),
+		os.Getenv("MATRIX_ACCESS_TOKEN"),
+	))
+	matrixClient.Client = exhttp.SensibleClientSettings.WithResponseHeaderTimeout(1 * time.Minute).Compile()
+	matrixClient.Log = defLog.With().Str("component", "matrix").Logger()
 	db = exerrors.Must(database.New(os.Getenv("DATABASE_URL"), defLog.With().Str("component", "database").Logger()))
 
 	mux := http.NewServeMux()
@@ -78,9 +88,13 @@ func main() {
 	mux.HandleFunc("GET /user/{userID}/likes", getUserLikesPage)
 	mux.HandleFunc("GET /user/{userID}/likes.json", getUserLikesPage)
 	mux.HandleFunc("GET /theme/{themeID}", getThemePage)
+	mux.HandleFunc("GET /theme/{themeID}/report", getReportPage)
+	mux.HandleFunc("POST /theme/{themeID}/report", postReport)
 	mux.HandleFunc("POST /theme/{themeID}/like", postThemeLike)
 	mux.HandleFunc("POST /theme/{themeID}/comments", postThemeComment)
 	mux.HandleFunc("GET /theme/{themeID}/comments/{commentID}/{action}", getThemeCommentActionPage)
+	mux.HandleFunc("GET /theme/{themeID}/comments/{commentID}/report", getReportPage)
+	mux.HandleFunc("POST /theme/{themeID}/comments/{commentID}/report", postReport)
 	mux.HandleFunc("POST /theme/{themeID}/comments/{commentID}/edit", postThemeCommentEdit)
 	mux.HandleFunc("POST /theme/{themeID}/comments/{commentID}/delete", postThemeCommentDelete)
 	mux.HandleFunc("GET /theme/{themeID}/commit/{version}", getThemePage)

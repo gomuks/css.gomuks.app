@@ -1,0 +1,17 @@
+<h1>Report {{ if .Comment }}comment{{ else }}theme{{ end }}</h1>
+<p>Theme: <a href="/theme/{{ .Theme.ID }}">{{ .Theme.Name }}</a></p>
+
+{{ if .Comment }}
+    <article class="comment">
+        {{ template "comment-content" .Comment }}
+    </article>
+{{ end }}
+
+<form class="report-form" action="/theme/{{ .Theme.ID }}{{ if .Comment }}/comments/{{ .Comment.ID }}{{ end }}/report" method="post">
+    <label for="report-reason">Reason for reporting</label>
+    <textarea id="report-reason" name="reason" rows="5" maxlength="1024" required autofocus></textarea>
+    <div class="comment-actions">
+        <button type="submit">Send report</button>
+        <a href="/theme/{{ .Theme.ID }}{{ if .Comment }}#comment-{{ .Comment.ID }}{{ end }}">Cancel</a>
+    </div>
+</form>

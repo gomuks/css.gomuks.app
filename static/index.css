@@ -36,7 +36,7 @@ main.page-index {
     }
 }
 
-main.page-theme, main.page-comment-action {
+main.page-theme, main.page-comment-action, main.page-report {
     display: flex;
     justify-content: center;
     padding: 1rem;
@@ -178,7 +178,7 @@ article.comment {
     flex-wrap: wrap;
 }
 
-.comment-form {
+.comment-form, .report-form {
     label, textarea {
         display: block;
     }

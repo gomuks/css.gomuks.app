@@ -23,6 +23,9 @@
             <a href="/theme/{{ .Theme.ID }}/commits">Version history</a>
             <a href="/theme/{{ .Theme.ID }}/edit">Edit theme</a>
         {{ end }}
+        {{ if .User }}
+            <a href="/theme/{{ .Theme.ID }}/report">Report theme</a>
+        {{ end }}
     </div>
     {{ if not .Commit }}
         <div class="last-updated small-text">
