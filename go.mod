@@ -12,7 +12,7 @@ require (
 	go.mau.fi/util v0.10.2-0.20260918225449-a4c0d5b86aa8
 	go.mau.fi/zeroconfig v0.2.0
 	golang.org/x/image v0.45.0
-	maunium.net/go/mautrix v0.31.1-0.20261007221609-a79d483c3f55
+	maunium.net/go/mautrix v0.31.1-0.20261008000937-cc1893852bcf
 )
 
 require (
