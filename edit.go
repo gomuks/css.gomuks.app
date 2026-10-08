@@ -116,6 +116,7 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		data, err := io.ReadAll(file)
+		_ = file.Close()
 		if err != nil {
 			log.Err(err).Msg("Failed to read file")
 			sendErrorResponse(w, r, ErrBadFormData.WithMessage("Failed to open preview image"))
@@ -145,7 +146,7 @@ func postThemeEditPage(w http.ResponseWriter, r *http.Request) {
 	var theme *database.Theme
 	err = db.DoTxn(r.Context(), nil, func(ctx context.Context) error {
 		var err error
-		theme, err = db.Theme.Get(r.Context(), themeID)
+		theme, err = db.Theme.Get(ctx, themeID)
 		if err != nil {
 			log.Err(err).Msg("Failed to get theme")
 			return mautrix.MUnknown.WithMessage("Failed to get theme %q", themeID)

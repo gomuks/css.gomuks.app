@@ -128,6 +128,9 @@ func main() {
 			}),
 			lockPolicyActions,
 		),
+		ReadHeaderTimeout: 15 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      15 * time.Second,
 	}
 
 	ctx, cancel := signal.NotifyContext(defLog.WithContext(context.Background()), os.Interrupt, syscall.SIGTERM)

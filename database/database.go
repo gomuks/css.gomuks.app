@@ -70,11 +70,16 @@ func (db *Database) GetContentUsers(ctx context.Context) ([]id.UserID, error) {
 		return *cached, nil
 	}
 	rows, err := db.Query(ctx, `SELECT user_id FROM admin UNION SELECT user_id FROM comment WHERE text IS NOT NULL`)
-	return dbutil.NewRowIterWithError(rows, func(row dbutil.Scannable) (id.UserID, error) {
+	res, err := dbutil.NewRowIterWithError(rows, func(row dbutil.Scannable) (id.UserID, error) {
 		var userID id.UserID
 		err := row.Scan(&userID)
 		return userID, err
 	}, err).AsList()
+	if err != nil {
+		return nil, err
+	}
+	db.contentUserCache.Store(&res)
+	return res, nil
 }
 
 func (db *Database) RemoveUserContent(ctx context.Context, userID id.UserID) error {

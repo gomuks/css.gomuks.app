@@ -200,7 +200,7 @@ func (ps *policySyncer) isBanned(userID id.UserID) bool {
 func lockPolicyActions(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := readCookie(r)
-		if userID == "" || r.URL.Path == "/login" {
+		if userID == "" || r.URL.Path == "/login" || (r.Method != http.MethodPost && r.Method != http.MethodPut) {
 			next.ServeHTTP(w, r)
 			return
 		}
