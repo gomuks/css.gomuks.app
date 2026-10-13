@@ -61,7 +61,7 @@ func main() {
 			Format: zeroconfig.LogFormatJSON,
 			FileConfig: zeroconfig.FileConfig{
 				Filename:   cmp.Or(os.Getenv("LOG_FILE"), "/var/log/gomuks-css.log"),
-				MaxSize:    100 * 1024,
+				MaxSize:    100,
 				MaxAge:     7,
 				MaxBackups: 10,
 			},
