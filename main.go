@@ -46,12 +46,6 @@ import (
 	"css.gomuks.app/database"
 )
 
-func init() {
-	if _, hasPort := os.LookupEnv("PORT"); !hasPort {
-		exerrors.PanicIfNotNil(os.Setenv("PORT", "8080"))
-	}
-}
-
 var defLog *zerolog.Logger
 var db *database.Database
 var matrixClient *mautrix.Client
@@ -119,7 +113,7 @@ func main() {
 	mux.Handle("/static/", http.FileServer(http.FS(StaticFS)))
 
 	server := http.Server{
-		Addr: fmt.Sprintf("%s:%s", os.Getenv("HOST"), os.Getenv("PORT")),
+		Addr: fmt.Sprintf("%s:%s", os.Getenv("HOST"), cmp.Or(os.Getenv("PORT"), "8080")),
 		Handler: exhttp.ApplyMiddleware(
 			mux,
 			hlog.NewHandler(*defLog),
@@ -131,7 +125,10 @@ func main() {
 		ReadHeaderTimeout: 15 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,
+		Protocols:         &http.Protocols{},
 	}
+	server.Protocols.SetHTTP1(true)
+	server.Protocols.SetUnencryptedHTTP2(true)
 
 	ctx, cancel := signal.NotifyContext(defLog.WithContext(context.Background()), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
