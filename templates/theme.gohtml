@@ -75,18 +75,18 @@
 <section>
     <h3>Code</h3>
     <p>
-        To use this theme, paste this at the top of your custom CSS:
+        To use this theme, paste the following import at the top of your custom CSS.
+    </p>
+    <p>
+        Optionally, you can replace <code>https://css.gomuks.app</code> with <code>_gomuks</code> to proxy the request
+        through the gomuks backend with caching. When using a specific commit, the backend caches the CSS forever and
+        will never re-request from upstream.
     </p>
     {{ if .Commit }}
         <pre><code class="language-css">@import url("https://css.gomuks.app/theme/{{ .Theme.ID }}/commit/{{ .Commit.Version }}.css");</code></pre>
     {{ else }}
         <pre><code class="language-css">@import url("https://css.gomuks.app/theme/{{ .Theme.ID }}.css");</code></pre>
     {{ end }}
-    <p>
-        Optionally, you can replace <code>https://css.gomuks.app</code> with <code>_gomuks</code> to proxy the request
-        through the gomuks backend with caching. When using a specific commit, the backend caches the CSS forever and
-        will never re-request from upstream.
-    </p>
     <details>
         <summary>Full CSS</summary>
         <pre><code class="language-css">{{ $commit.Content }}</code></pre>
